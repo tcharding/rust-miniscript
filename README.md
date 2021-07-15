@@ -1,3 +1,15 @@
+# Dogecoin fork of rust-miniscritp
+
+**Work In Progress**
+
+This repository was forked from [rust-miniscript](https://github.com/rust-bitcoin/rust-miniscript) in
+an effort to get [doge-bdk](https://github.com/tcharding/doge-bdk) working with `dogecoind`.
+
+Only tested on testnet, use at your own risk.
+
+# ----- Original rust-miniscript README ------
+
+
 ![Build](https://github.com/rust-bitcoin/rust-miniscript/workflows/Continuous%20integration/badge.svg)
 
 **Minimum Supported Rust Version:** 1.29.0
