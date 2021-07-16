@@ -16,7 +16,7 @@ use-serde = ["bitcoin/use-serde", "serde"]
 rand = ["bitcoin/rand"]
 
 [dependencies]
-bitcoin = "0.26.2"
+bitcoin = { version = "0.26.2", git = "http://github.com/tcharding/rust-bitcoin", branch = "dogecoin" }
 
 [dependencies.serde]
 version = "1.0"
