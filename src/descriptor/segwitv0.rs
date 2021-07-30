@@ -18,7 +18,7 @@
 
 use std::{fmt, str::FromStr};
 
-use bitcoin::{self, Script};
+use bitcoin::{self, Blockchain, Script};
 
 use expression::{self, FromTree};
 use miniscript::context::{ScriptContext, ScriptContextError};
@@ -167,31 +167,37 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wsh<Pk> {
         Ok(())
     }
 
-    fn address(&self, network: bitcoin::Network) -> Result<bitcoin::Address, Error>
+    fn address(
+        &self,
+        network: bitcoin::Network,
+        chain: Blockchain,
+    ) -> Result<bitcoin::Address, Error>
     where
         Pk: ToPublicKey,
     {
         match self.inner {
-            WshInner::SortedMulti(ref smv) => Ok(bitcoin::Address::p2wsh(&smv.encode(), network)),
-            WshInner::Ms(ref ms) => Ok(bitcoin::Address::p2wsh(&ms.encode(), network)),
+            WshInner::SortedMulti(ref smv) => {
+                Ok(bitcoin::Address::p2wsh(&smv.encode(), network, chain))
+            }
+            WshInner::Ms(ref ms) => Ok(bitcoin::Address::p2wsh(&ms.encode(), network, chain)),
         }
     }
 
-    fn script_pubkey(&self) -> Script
+    fn script_pubkey(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
-        self.explicit_script().to_v0_p2wsh()
+        self.explicit_script(chain).to_v0_p2wsh()
     }
 
-    fn unsigned_script_sig(&self) -> Script
+    fn unsigned_script_sig(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         Script::new()
     }
 
-    fn explicit_script(&self) -> Script
+    fn explicit_script(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
@@ -201,7 +207,11 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wsh<Pk> {
         }
     }
 
-    fn get_satisfaction<S>(&self, satisfier: S) -> Result<(Vec<Vec<u8>>, Script), Error>
+    fn get_satisfaction<S>(
+        &self,
+        satisfier: S,
+        chain: Blockchain,
+    ) -> Result<(Vec<Vec<u8>>, Script), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>,
@@ -210,7 +220,7 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wsh<Pk> {
             WshInner::SortedMulti(ref smv) => smv.satisfy(satisfier)?,
             WshInner::Ms(ref ms) => ms.satisfy(satisfier)?,
         };
-        witness.push(self.explicit_script().into_bytes());
+        witness.push(self.explicit_script(chain).into_bytes());
         let script_sig = Script::new();
         Ok((witness, script_sig))
     }
@@ -235,11 +245,11 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wsh<Pk> {
             max_sat_size)
     }
 
-    fn script_code(&self) -> Script
+    fn script_code(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
-        self.explicit_script()
+        self.explicit_script(chain)
     }
 }
 
@@ -382,38 +392,52 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wpkh<Pk> {
         }
     }
 
-    fn address(&self, network: bitcoin::Network) -> Result<bitcoin::Address, Error>
+    fn address(
+        &self,
+        network: bitcoin::Network,
+        chain: Blockchain,
+    ) -> Result<bitcoin::Address, Error>
     where
         Pk: ToPublicKey,
     {
-        Ok(bitcoin::Address::p2wpkh(&self.pk.to_public_key(), network)
-            .expect("Rust Miniscript types don't allow uncompressed pks in segwit descriptors"))
+        Ok(
+            bitcoin::Address::p2wpkh(&self.pk.to_public_key(), network, chain)
+                .expect("Rust Miniscript types don't allow uncompressed pks in segwit descriptors"),
+        )
     }
 
-    fn script_pubkey(&self) -> Script
+    fn script_pubkey(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
-        let addr = bitcoin::Address::p2wpkh(&self.pk.to_public_key(), bitcoin::Network::Bitcoin)
-            .expect("wpkh descriptors have compressed keys");
+        let addr = bitcoin::Address::p2wpkh(
+            &self.pk.to_public_key(),
+            bitcoin::Network::Bitcoin,
+            chain,
+        )
+        .expect("wpkh descriptors have compressed keys");
         addr.script_pubkey()
     }
 
-    fn unsigned_script_sig(&self) -> Script
+    fn unsigned_script_sig(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         Script::new()
     }
 
-    fn explicit_script(&self) -> Script
+    fn explicit_script(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
-        self.script_pubkey()
+        self.script_pubkey(chain)
     }
 
-    fn get_satisfaction<S>(&self, satisfier: S) -> Result<(Vec<Vec<u8>>, Script), Error>
+    fn get_satisfaction<S>(
+        &self,
+        satisfier: S,
+        _: Blockchain,
+    ) -> Result<(Vec<Vec<u8>>, Script), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>,
@@ -433,7 +457,7 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wpkh<Pk> {
         Ok(4 + 1 + 73 + self.pk.serialized_len())
     }
 
-    fn script_code(&self) -> Script
+    fn script_code(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
@@ -441,7 +465,11 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Wpkh<Pk> {
         // the previous txo's scriptPubKey.
         // The item 5:
         //     - For P2WPKH witness program, the scriptCode is `0x1976a914{20-byte-pubkey-hash}88ac`.
-        let addr = bitcoin::Address::p2pkh(&self.pk.to_public_key(), bitcoin::Network::Bitcoin);
+        let addr = bitcoin::Address::p2pkh(
+            &self.pk.to_public_key(),
+            bitcoin::Network::Bitcoin,
+            chain,
+        );
         addr.script_pubkey()
     }
 }

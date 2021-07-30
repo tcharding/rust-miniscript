@@ -3,8 +3,11 @@ extern crate miniscript;
 
 use bitcoin::consensus::encode::deserialize;
 use bitcoin::hashes::hex::FromHex;
+use bitcoin::Blockchain;
 
 use miniscript::psbt::{extract, finalize};
+
+const CHAIN: Blockchain = Blockchain::Bitcoin;
 
 fn main() {
     // Test vectors from BIP 174
@@ -18,7 +21,7 @@ fn main() {
     let secp = bitcoin::secp256k1::Secp256k1::verification_only();
     // Assuming all partial sigs are filled in.
     // Construct a generic finalizer
-    finalize(&mut psbt, &secp).unwrap();
+    finalize(&mut psbt, &secp, CHAIN).unwrap();
     // println!("{:?}", psbt);
 
     assert_eq!(psbt, expected_finalized_psbt);

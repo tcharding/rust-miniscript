@@ -71,7 +71,7 @@
 //!
 //!     // Derive the P2SH address
 //!     assert_eq!(
-//!         desc.address(bitcoin::Network::Bitcoin).unwrap().to_string(),
+//!         desc.address(bitcoin::Network::Bitcoin, bitcoin::Blockchain::Bitcoin).unwrap().to_string(),
 //!         "3CJxbQBfWAe1ZkKiGQNEYrioV73ZwvBWns"
 //!     );
 //!

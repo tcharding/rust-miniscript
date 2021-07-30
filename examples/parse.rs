@@ -17,8 +17,11 @@
 extern crate bitcoin;
 extern crate miniscript;
 
+use bitcoin::Blockchain;
 use miniscript::{descriptor::DescriptorType, DescriptorTrait};
 use std::str::FromStr;
+
+const CHAIN: Blockchain = Blockchain::Bitcoin;
 
 fn main() {
     let my_descriptor = miniscript::Descriptor::<bitcoin::PublicKey>::from_str(
@@ -37,12 +40,12 @@ fn main() {
     // when calculating the script pubkey of a descriptor with xpubs, the secp context and
     // child information maybe required.
     assert_eq!(
-        format!("{:x}", my_descriptor.script_pubkey()),
+        format!("{:x}", my_descriptor.script_pubkey(CHAIN)),
         "0020daef16dd7c946a3e735a6e43310cb2ce33dfd14a04f76bf8241a16654cb2f0f9"
     );
 
     assert_eq!(
-        format!("{:x}", my_descriptor.explicit_script()),
+        format!("{:x}", my_descriptor.explicit_script(CHAIN)),
         "21020202020202020202020202020202020202020202020202020202020202020202ac"
     );
 
