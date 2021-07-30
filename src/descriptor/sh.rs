@@ -20,7 +20,7 @@
 
 use std::{fmt, str::FromStr};
 
-use bitcoin::{self, blockdata::script, Script};
+use bitcoin::{self, blockdata::script, Blockchain, Script};
 
 use expression::{self, FromTree};
 use miniscript::context::ScriptContext;
@@ -204,43 +204,57 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Sh<Pk> {
         Ok(())
     }
 
-    fn address(&self, network: bitcoin::Network) -> Result<bitcoin::Address, Error>
+    fn address(
+        &self,
+        network: bitcoin::Network,
+        chain: Blockchain,
+    ) -> Result<bitcoin::Address, Error>
     where
         Pk: ToPublicKey,
     {
         match self.inner {
-            ShInner::Wsh(ref wsh) => Ok(bitcoin::Address::p2sh(&wsh.script_pubkey(), network)),
-            ShInner::Wpkh(ref wpkh) => Ok(bitcoin::Address::p2sh(&wpkh.script_pubkey(), network)),
-            ShInner::SortedMulti(ref smv) => Ok(bitcoin::Address::p2sh(&smv.encode(), network)),
-            ShInner::Ms(ref ms) => Ok(bitcoin::Address::p2sh(&ms.encode(), network)),
+            ShInner::Wsh(ref wsh) => Ok(bitcoin::Address::p2sh(
+                &wsh.script_pubkey(chain),
+                network,
+                chain,
+            )),
+            ShInner::Wpkh(ref wpkh) => Ok(bitcoin::Address::p2sh(
+                &wpkh.script_pubkey(chain),
+                network,
+                chain,
+            )),
+            ShInner::SortedMulti(ref smv) => {
+                Ok(bitcoin::Address::p2sh(&smv.encode(), network, chain))
+            }
+            ShInner::Ms(ref ms) => Ok(bitcoin::Address::p2sh(&ms.encode(), network, chain)),
         }
     }
 
-    fn script_pubkey(&self) -> Script
+    fn script_pubkey(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match self.inner {
-            ShInner::Wsh(ref wsh) => wsh.script_pubkey().to_p2sh(),
-            ShInner::Wpkh(ref wpkh) => wpkh.script_pubkey().to_p2sh(),
+            ShInner::Wsh(ref wsh) => wsh.script_pubkey(chain).to_p2sh(),
+            ShInner::Wpkh(ref wpkh) => wpkh.script_pubkey(chain).to_p2sh(),
             ShInner::SortedMulti(ref smv) => smv.encode().to_p2sh(),
             ShInner::Ms(ref ms) => ms.encode().to_p2sh(),
         }
     }
 
-    fn unsigned_script_sig(&self) -> Script
+    fn unsigned_script_sig(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match self.inner {
             ShInner::Wsh(ref wsh) => {
-                let witness_script = wsh.explicit_script();
+                let witness_script = wsh.explicit_script(chain);
                 script::Builder::new()
                     .push_slice(&witness_script.to_v0_p2wsh()[..])
                     .into_script()
             }
             ShInner::Wpkh(ref wpkh) => {
-                let redeem_script = wpkh.script_pubkey();
+                let redeem_script = wpkh.script_pubkey(chain);
                 script::Builder::new()
                     .push_slice(&redeem_script[..])
                     .into_script()
@@ -249,31 +263,35 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Sh<Pk> {
         }
     }
 
-    fn explicit_script(&self) -> Script
+    fn explicit_script(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match self.inner {
-            ShInner::Wsh(ref wsh) => wsh.explicit_script(),
-            ShInner::Wpkh(ref wpkh) => wpkh.script_pubkey(),
+            ShInner::Wsh(ref wsh) => wsh.explicit_script(chain),
+            ShInner::Wpkh(ref wpkh) => wpkh.script_pubkey(chain),
             ShInner::SortedMulti(ref smv) => smv.encode(),
             ShInner::Ms(ref ms) => ms.encode(),
         }
     }
 
-    fn get_satisfaction<S>(&self, satisfier: S) -> Result<(Vec<Vec<u8>>, Script), Error>
+    fn get_satisfaction<S>(
+        &self,
+        satisfier: S,
+        chain: Blockchain,
+    ) -> Result<(Vec<Vec<u8>>, Script), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>,
     {
-        let script_sig = self.unsigned_script_sig();
+        let script_sig = self.unsigned_script_sig(chain);
         match self.inner {
             ShInner::Wsh(ref wsh) => {
-                let (witness, _) = wsh.get_satisfaction(satisfier)?;
+                let (witness, _) = wsh.get_satisfaction(satisfier, chain)?;
                 Ok((witness, script_sig))
             }
             ShInner::Wpkh(ref wpkh) => {
-                let (witness, _) = wpkh.get_satisfaction(satisfier)?;
+                let (witness, _) = wpkh.get_satisfaction(satisfier, chain)?;
                 Ok((witness, script_sig))
             }
             ShInner::SortedMulti(ref smv) => {
@@ -314,16 +332,16 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Sh<Pk> {
         })
     }
 
-    fn script_code(&self) -> Script
+    fn script_code(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match self.inner {
             //     - For P2WSH witness program, if the witnessScript does not contain any `OP_CODESEPARATOR`,
             //       the `scriptCode` is the `witnessScript` serialized as scripts inside CTxOut.
-            ShInner::Wsh(ref wsh) => wsh.script_code(),
+            ShInner::Wsh(ref wsh) => wsh.script_code(chain),
             ShInner::SortedMulti(ref smv) => smv.encode(),
-            ShInner::Wpkh(ref wpkh) => wpkh.script_code(),
+            ShInner::Wpkh(ref wpkh) => wpkh.script_code(chain),
             // For "legacy" P2SH outputs, it is defined as the txo's redeemScript.
             ShInner::Ms(ref ms) => ms.encode(),
         }

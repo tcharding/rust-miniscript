@@ -30,7 +30,7 @@ use std::{
 };
 
 use bitcoin::secp256k1;
-use bitcoin::{self, Script};
+use bitcoin::{self, Blockchain, Script};
 
 use self::checksum::verify_checksum;
 use expression;
@@ -85,12 +85,12 @@ pub trait DescriptorTrait<Pk: MiniscriptKey> {
 
     /// Computes the Bitcoin address of the descriptor, if one exists
     /// Some descriptors like pk() don't have any address.
-    fn address(&self, network: bitcoin::Network) -> Result<bitcoin::Address, Error>
+    fn address(&self, _: bitcoin::Network, _: Blockchain) -> Result<bitcoin::Address, Error>
     where
         Pk: ToPublicKey;
 
     /// Computes the scriptpubkey of the descriptor
-    fn script_pubkey(&self) -> Script
+    fn script_pubkey(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey;
 
@@ -102,7 +102,7 @@ pub trait DescriptorTrait<Pk: MiniscriptKey> {
     /// This is used in Segwit transactions to produce an unsigned
     /// transaction whose txid will not change during signing (since
     /// only the witness data will change).
-    fn unsigned_script_sig(&self) -> Script
+    fn unsigned_script_sig(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey;
 
@@ -110,14 +110,18 @@ pub trait DescriptorTrait<Pk: MiniscriptKey> {
     /// script before any hashing is done. For `Bare`, `Pkh` and `Wpkh` this
     /// is the scriptPubkey; for `ShWpkh` and `Sh` this is the redeemScript;
     /// for the others it is the witness script.
-    fn explicit_script(&self) -> Script
+    fn explicit_script(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey;
 
     /// Returns satisfying witness and scriptSig to spend an
     /// output controlled by the given descriptor if it possible to
     /// construct one using the satisfier S.
-    fn get_satisfaction<S>(&self, satisfier: S) -> Result<(Vec<Vec<u8>>, Script), Error>
+    fn get_satisfaction<S>(
+        &self,
+        satisfier: S,
+        _: Blockchain,
+    ) -> Result<(Vec<Vec<u8>>, Script), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>;
@@ -125,13 +129,18 @@ pub trait DescriptorTrait<Pk: MiniscriptKey> {
     /// Attempts to produce a satisfying witness and scriptSig to spend an
     /// output controlled by the given descriptor; add the data to a given
     /// `TxIn` output.
-    fn satisfy<S>(&self, txin: &mut bitcoin::TxIn, satisfier: S) -> Result<(), Error>
+    fn satisfy<S>(
+        &self,
+        txin: &mut bitcoin::TxIn,
+        satisfier: S,
+        chain: Blockchain,
+    ) -> Result<(), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>,
     {
         // easy default implementation
-        let (witness, script_sig) = self.get_satisfaction(satisfier)?;
+        let (witness, script_sig) = self.get_satisfaction(satisfier, chain)?;
         txin.witness = witness;
         txin.script_sig = script_sig;
         Ok(())
@@ -148,7 +157,7 @@ pub trait DescriptorTrait<Pk: MiniscriptKey> {
     ///
     /// The `scriptCode` is the Script of the previous transaction output being serialized in the
     /// sighash when evaluating a `CHECKSIG` & co. OP code.
-    fn script_code(&self) -> Script
+    fn script_code(&self, _: Blockchain) -> Script
     where
         Pk: ToPublicKey;
 }
@@ -356,30 +365,34 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Descriptor<Pk> {
         }
     }
     /// Computes the Bitcoin address of the descriptor, if one exists
-    fn address(&self, network: bitcoin::Network) -> Result<bitcoin::Address, Error>
+    fn address(
+        &self,
+        network: bitcoin::Network,
+        chain: Blockchain,
+    ) -> Result<bitcoin::Address, Error>
     where
         Pk: ToPublicKey,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.address(network),
-            Descriptor::Pkh(ref pkh) => pkh.address(network),
-            Descriptor::Wpkh(ref wpkh) => wpkh.address(network),
-            Descriptor::Wsh(ref wsh) => wsh.address(network),
-            Descriptor::Sh(ref sh) => sh.address(network),
+            Descriptor::Bare(ref bare) => bare.address(network, chain),
+            Descriptor::Pkh(ref pkh) => pkh.address(network, chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.address(network, chain),
+            Descriptor::Wsh(ref wsh) => wsh.address(network, chain),
+            Descriptor::Sh(ref sh) => sh.address(network, chain),
         }
     }
 
     /// Computes the scriptpubkey of the descriptor
-    fn script_pubkey(&self) -> Script
+    fn script_pubkey(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.script_pubkey(),
-            Descriptor::Pkh(ref pkh) => pkh.script_pubkey(),
-            Descriptor::Wpkh(ref wpkh) => wpkh.script_pubkey(),
-            Descriptor::Wsh(ref wsh) => wsh.script_pubkey(),
-            Descriptor::Sh(ref sh) => sh.script_pubkey(),
+            Descriptor::Bare(ref bare) => bare.script_pubkey(chain),
+            Descriptor::Pkh(ref pkh) => pkh.script_pubkey(chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.script_pubkey(chain),
+            Descriptor::Wsh(ref wsh) => wsh.script_pubkey(chain),
+            Descriptor::Sh(ref sh) => sh.script_pubkey(chain),
         }
     }
 
@@ -391,16 +404,16 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Descriptor<Pk> {
     /// This is used in Segwit transactions to produce an unsigned
     /// transaction whose txid will not change during signing (since
     /// only the witness data will change).
-    fn unsigned_script_sig(&self) -> Script
+    fn unsigned_script_sig(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.unsigned_script_sig(),
-            Descriptor::Pkh(ref pkh) => pkh.unsigned_script_sig(),
-            Descriptor::Wpkh(ref wpkh) => wpkh.unsigned_script_sig(),
-            Descriptor::Wsh(ref wsh) => wsh.unsigned_script_sig(),
-            Descriptor::Sh(ref sh) => sh.unsigned_script_sig(),
+            Descriptor::Bare(ref bare) => bare.unsigned_script_sig(chain),
+            Descriptor::Pkh(ref pkh) => pkh.unsigned_script_sig(chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.unsigned_script_sig(chain),
+            Descriptor::Wsh(ref wsh) => wsh.unsigned_script_sig(chain),
+            Descriptor::Sh(ref sh) => sh.unsigned_script_sig(chain),
         }
     }
 
@@ -408,33 +421,37 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Descriptor<Pk> {
     /// script before any hashing is done. For `Bare`, `Pkh` and `Wpkh` this
     /// is the scriptPubkey; for `ShWpkh` and `Sh` this is the redeemScript;
     /// for the others it is the witness script.
-    fn explicit_script(&self) -> Script
+    fn explicit_script(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.explicit_script(),
-            Descriptor::Pkh(ref pkh) => pkh.explicit_script(),
-            Descriptor::Wpkh(ref wpkh) => wpkh.explicit_script(),
-            Descriptor::Wsh(ref wsh) => wsh.explicit_script(),
-            Descriptor::Sh(ref sh) => sh.explicit_script(),
+            Descriptor::Bare(ref bare) => bare.explicit_script(chain),
+            Descriptor::Pkh(ref pkh) => pkh.explicit_script(chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.explicit_script(chain),
+            Descriptor::Wsh(ref wsh) => wsh.explicit_script(chain),
+            Descriptor::Sh(ref sh) => sh.explicit_script(chain),
         }
     }
 
     /// Returns satisfying witness and scriptSig to spend an
     /// output controlled by the given descriptor if it possible to
     /// construct one using the satisfier S.
-    fn get_satisfaction<S>(&self, satisfier: S) -> Result<(Vec<Vec<u8>>, Script), Error>
+    fn get_satisfaction<S>(
+        &self,
+        satisfier: S,
+        chain: Blockchain,
+    ) -> Result<(Vec<Vec<u8>>, Script), Error>
     where
         Pk: ToPublicKey,
         S: Satisfier<Pk>,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.get_satisfaction(satisfier),
-            Descriptor::Pkh(ref pkh) => pkh.get_satisfaction(satisfier),
-            Descriptor::Wpkh(ref wpkh) => wpkh.get_satisfaction(satisfier),
-            Descriptor::Wsh(ref wsh) => wsh.get_satisfaction(satisfier),
-            Descriptor::Sh(ref sh) => sh.get_satisfaction(satisfier),
+            Descriptor::Bare(ref bare) => bare.get_satisfaction(satisfier, chain),
+            Descriptor::Pkh(ref pkh) => pkh.get_satisfaction(satisfier, chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.get_satisfaction(satisfier, chain),
+            Descriptor::Wsh(ref wsh) => wsh.get_satisfaction(satisfier, chain),
+            Descriptor::Sh(ref sh) => sh.get_satisfaction(satisfier, chain),
         }
     }
 
@@ -456,16 +473,16 @@ impl<Pk: MiniscriptKey> DescriptorTrait<Pk> for Descriptor<Pk> {
     ///
     /// The `scriptCode` is the Script of the previous transaction output being serialized in the
     /// sighash when evaluating a `CHECKSIG` & co. OP code.
-    fn script_code(&self) -> Script
+    fn script_code(&self, chain: Blockchain) -> Script
     where
         Pk: ToPublicKey,
     {
         match *self {
-            Descriptor::Bare(ref bare) => bare.script_code(),
-            Descriptor::Pkh(ref pkh) => pkh.script_code(),
-            Descriptor::Wpkh(ref wpkh) => wpkh.script_code(),
-            Descriptor::Wsh(ref wsh) => wsh.script_code(),
-            Descriptor::Sh(ref sh) => sh.script_code(),
+            Descriptor::Bare(ref bare) => bare.script_code(chain),
+            Descriptor::Pkh(ref pkh) => pkh.script_code(chain),
+            Descriptor::Wpkh(ref wpkh) => wpkh.script_code(chain),
+            Descriptor::Wsh(ref wsh) => wsh.script_code(chain),
+            Descriptor::Sh(ref sh) => sh.script_code(chain),
         }
     }
 }
@@ -629,7 +646,7 @@ mod tests {
     use bitcoin::hashes::hex::FromHex;
     use bitcoin::hashes::{hash160, sha256};
     use bitcoin::util::bip32;
-    use bitcoin::{self, secp256k1, PublicKey};
+    use bitcoin::{self, secp256k1, PublicKey, Blockchain};
     use descriptor::key::Wildcard;
     use descriptor::{
         DescriptorPublicKey, DescriptorSecretKey, DescriptorSinglePub, DescriptorXKey,
@@ -647,6 +664,8 @@ mod tests {
     type StdDescriptor = Descriptor<PublicKey>;
     const TEST_PK: &'static str =
         "pk(020000000000000000000000000000000000000000000000000000000000000002)";
+
+    const CHAIN: Blockchain = Blockchain::Bitcoin;
 
     impl cmp::PartialEq for DescriptorSecretKey {
         fn eq(&self, other: &Self) -> bool {
@@ -735,13 +754,13 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(
-            bare.script_pubkey(),
+            bare.script_pubkey(CHAIN),
             hex_script(
                 "512102000000000000000000000000000000000000000000000000000000000000000251ae"
             )
         );
         assert_eq!(
-            bare.address(bitcoin::Network::Bitcoin)
+            bare.address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap_err()
                 .to_string(),
             "Bare descriptors don't have address"
@@ -749,7 +768,7 @@ mod tests {
 
         let pk = StdDescriptor::from_str(TEST_PK).unwrap();
         assert_eq!(
-            pk.script_pubkey(),
+            pk.script_pubkey(CHAIN),
             bitcoin::Script::from(vec![
                 0x21, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -764,7 +783,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            pkh.script_pubkey(),
+            pkh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_DUP)
                 .push_opcode(opcodes::all::OP_HASH160)
@@ -777,7 +796,7 @@ mod tests {
                 .into_script()
         );
         assert_eq!(
-            pkh.address(bitcoin::Network::Bitcoin,).unwrap().to_string(),
+            pkh.address(bitcoin::Network::Bitcoin, CHAIN).unwrap().to_string(),
             "1D7nRvrRgzCg9kYBwhPH3j3Gs6SmsRg3Wq"
         );
 
@@ -788,7 +807,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            wpkh.script_pubkey(),
+            wpkh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_PUSHBYTES_0)
                 .push_slice(
@@ -798,7 +817,7 @@ mod tests {
                 .into_script()
         );
         assert_eq!(
-            wpkh.address(bitcoin::Network::Bitcoin,)
+            wpkh.address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap()
                 .to_string(),
             "bc1qsn57m9drscflq5nl76z6ny52hck5w4x5wqd9yt"
@@ -811,7 +830,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            shwpkh.script_pubkey(),
+            shwpkh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_HASH160)
                 .push_slice(
@@ -823,7 +842,7 @@ mod tests {
         );
         assert_eq!(
             shwpkh
-                .address(bitcoin::Network::Bitcoin,)
+                .address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap()
                 .to_string(),
             "3PjMEzoveVbvajcnDDuxcJhsuqPHgydQXq"
@@ -836,7 +855,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            sh.script_pubkey(),
+            sh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_HASH160)
                 .push_slice(
@@ -847,7 +866,7 @@ mod tests {
                 .into_script()
         );
         assert_eq!(
-            sh.address(bitcoin::Network::Bitcoin,).unwrap().to_string(),
+            sh.address(bitcoin::Network::Bitcoin, CHAIN).unwrap().to_string(),
             "3HDbdvM9CQ6ASnQFUkWw6Z4t3qNwMesJE9"
         );
 
@@ -858,7 +877,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            wsh.script_pubkey(),
+            wsh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_PUSHBYTES_0)
                 .push_slice(
@@ -873,7 +892,7 @@ mod tests {
                 .into_script()
         );
         assert_eq!(
-            wsh.address(bitcoin::Network::Bitcoin,).unwrap().to_string(),
+            wsh.address(bitcoin::Network::Bitcoin, CHAIN).unwrap().to_string(),
             "bc1qlymeahyfsv2jm3upw3urqp6m65ufde9seedl7umh0lth6yjt5zzsk33tv6"
         );
 
@@ -884,7 +903,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            shwsh.script_pubkey(),
+            shwsh.script_pubkey(CHAIN),
             script::Builder::new()
                 .push_opcode(opcodes::all::OP_HASH160)
                 .push_slice(
@@ -896,7 +915,7 @@ mod tests {
         );
         assert_eq!(
             shwsh
-                .address(bitcoin::Network::Bitcoin,)
+                .address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap()
                 .to_string(),
             "38cTksiyPT2b1uGRVbVqHdDhW9vKs84N6Z"
@@ -944,7 +963,7 @@ mod tests {
         };
         let bare = Descriptor::new_bare(ms.clone()).unwrap();
 
-        bare.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        bare.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -954,10 +973,10 @@ mod tests {
                 witness: vec![],
             }
         );
-        assert_eq!(bare.unsigned_script_sig(), bitcoin::Script::new());
+        assert_eq!(bare.unsigned_script_sig(CHAIN), bitcoin::Script::new());
 
         let pkh = Descriptor::new_pkh(pk);
-        pkh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        pkh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -970,10 +989,10 @@ mod tests {
                 witness: vec![],
             }
         );
-        assert_eq!(pkh.unsigned_script_sig(), bitcoin::Script::new());
+        assert_eq!(pkh.unsigned_script_sig(CHAIN), bitcoin::Script::new());
 
         let wpkh = Descriptor::new_wpkh(pk).unwrap();
-        wpkh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        wpkh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -983,10 +1002,10 @@ mod tests {
                 witness: vec![sigser.clone(), pk.to_bytes(),],
             }
         );
-        assert_eq!(wpkh.unsigned_script_sig(), bitcoin::Script::new());
+        assert_eq!(wpkh.unsigned_script_sig(CHAIN), bitcoin::Script::new());
 
         let shwpkh = Descriptor::new_sh_wpkh(pk).unwrap();
-        shwpkh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        shwpkh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         let redeem_script = script::Builder::new()
             .push_opcode(opcodes::all::OP_PUSHBYTES_0)
             .push_slice(
@@ -1005,7 +1024,7 @@ mod tests {
             }
         );
         assert_eq!(
-            shwpkh.unsigned_script_sig(),
+            shwpkh.unsigned_script_sig(CHAIN),
             script::Builder::new()
                 .push_slice(&redeem_script[..])
                 .into_script()
@@ -1013,7 +1032,7 @@ mod tests {
 
         let ms = ms_str!("c:pk_k({})", pk);
         let sh = Descriptor::new_sh(ms.clone()).unwrap();
-        sh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        sh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -1026,12 +1045,12 @@ mod tests {
                 witness: vec![],
             }
         );
-        assert_eq!(sh.unsigned_script_sig(), bitcoin::Script::new());
+        assert_eq!(sh.unsigned_script_sig(CHAIN), bitcoin::Script::new());
 
         let ms = ms_str!("c:pk_k({})", pk);
 
         let wsh = Descriptor::new_wsh(ms.clone()).unwrap();
-        wsh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        wsh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -1041,10 +1060,10 @@ mod tests {
                 witness: vec![sigser.clone(), ms.encode().into_bytes(),],
             }
         );
-        assert_eq!(wsh.unsigned_script_sig(), bitcoin::Script::new());
+        assert_eq!(wsh.unsigned_script_sig(CHAIN), bitcoin::Script::new());
 
         let shwsh = Descriptor::new_sh_wsh(ms.clone()).unwrap();
-        shwsh.satisfy(&mut txin, &satisfier).expect("satisfaction");
+        shwsh.satisfy(&mut txin, &satisfier, CHAIN).expect("satisfaction");
         assert_eq!(
             txin,
             bitcoin::TxIn {
@@ -1057,7 +1076,7 @@ mod tests {
             }
         );
         assert_eq!(
-            shwsh.unsigned_script_sig(),
+            shwsh.unsigned_script_sig(CHAIN),
             script::Builder::new()
                 .push_slice(&ms.encode().to_v0_p2wsh()[..])
                 .into_script()
@@ -1067,7 +1086,7 @@ mod tests {
     #[test]
     fn after_is_cltv() {
         let descriptor = Descriptor::<bitcoin::PublicKey>::from_str("wsh(after(1000))").unwrap();
-        let script = descriptor.explicit_script();
+        let script = descriptor.explicit_script(CHAIN);
 
         let actual_instructions: Vec<_> = script.instructions().collect();
         let check = actual_instructions.last().unwrap();
@@ -1078,7 +1097,7 @@ mod tests {
     #[test]
     fn older_is_csv() {
         let descriptor = Descriptor::<bitcoin::PublicKey>::from_str("wsh(older(1000))").unwrap();
-        let script = descriptor.explicit_script();
+        let script = descriptor.explicit_script(CHAIN);
 
         let actual_instructions: Vec<_> = script.instructions().collect();
         let check = actual_instructions.last().unwrap();
@@ -1142,7 +1161,7 @@ mod tests {
         };
 
         // act
-        descriptor.satisfy(&mut txin, &satisfier).unwrap();
+        descriptor.satisfy(&mut txin, &satisfier, CHAIN).unwrap();
 
         // assert
         let witness0 = &txin.witness[0];
@@ -1167,7 +1186,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            *descriptor.script_code().as_bytes(),
+            *descriptor.script_code(CHAIN).as_bytes(),
             Vec::<u8>::from_hex("76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac").unwrap()[..]
         );
 
@@ -1177,7 +1196,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            *descriptor.script_code().as_bytes(),
+            *descriptor.script_code(CHAIN).as_bytes(),
             Vec::<u8>::from_hex("76a91479091972186c449eb1ded22b78e40d009bdf008988ac").unwrap()[..]
         );
 
@@ -1188,7 +1207,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             *descriptor
-                .script_code()
+                .script_code(CHAIN)
                 .as_bytes(),
             Vec::<u8>::from_hex("522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae").unwrap()[..]
         );
@@ -1197,7 +1216,7 @@ mod tests {
         let descriptor = Descriptor::<PublicKey>::from_str("sh(wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626)))").unwrap();
         assert_eq!(
             *descriptor
-                .script_code()
+                .script_code(CHAIN)
                 .as_bytes(),
             Vec::<u8>::from_hex("522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae")
                 .unwrap()[..]
@@ -1328,12 +1347,12 @@ mod tests {
             let addr_one = desc_one
                 .translate_pk2(|xpk| xpk.derive_public_key(&secp_ctx))
                 .unwrap()
-                .address(bitcoin::Network::Bitcoin)
+                .address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap();
             let addr_two = desc_two
                 .translate_pk2(|xpk| xpk.derive_public_key(&secp_ctx))
                 .unwrap()
-                .address(bitcoin::Network::Bitcoin)
+                .address(bitcoin::Network::Bitcoin, CHAIN)
                 .unwrap();
             let addr_expected = bitcoin::Address::from_str(raw_addr_expected).unwrap();
             assert_eq!(addr_one, addr_expected);

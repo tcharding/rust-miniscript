@@ -15,8 +15,10 @@ default = []
 use-serde = ["bitcoin/use-serde", "serde"]
 rand = ["bitcoin/rand"]
 
-[dependencies]
-bitcoin = "0.26"
+[dependencies.bitcoin]
+git = "ssh://git@github.com/tcharding/rust-bitcoin.git"
+version = "0.26.2"
+branch = "altcoin-support-v0.26.2"
 
 [dependencies.serde]
 version = "1.0"
