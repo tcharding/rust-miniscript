@@ -388,13 +388,8 @@ where
     }
 }
 
-impl<Pk: MiniscriptKey> FromTree for Tr<Pk>
-where
-    Pk: MiniscriptKey + FromStr,
-    Pk::Hash: FromStr,
-    <Pk as FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as FromStr>::Err: ToString,
-{
+impl_from_tree!(
+    Tr<Pk>,
     fn from_tree(top: &expression::Tree) -> Result<Self, Error> {
         // Helper function to parse taproot script path
         fn parse_tr_script_spend<Pk: MiniscriptKey>(
@@ -471,23 +466,17 @@ where
             )));
         }
     }
-}
+);
 
-impl<Pk: MiniscriptKey> FromStr for Tr<Pk>
-where
-    Pk: MiniscriptKey + FromStr,
-    Pk::Hash: FromStr,
-    <Pk as FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as FromStr>::Err: ToString,
-{
-    type Err = Error;
-
+impl_from_str!(
+    Tr<Pk>,
+    type Err = Error;,
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let desc_str = verify_checksum(s)?;
         let top = parse_tr_tree(desc_str)?;
         Self::from_tree(&top)
     }
-}
+);
 
 impl<Pk: MiniscriptKey> fmt::Debug for Tr<Pk> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

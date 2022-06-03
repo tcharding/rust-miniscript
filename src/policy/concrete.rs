@@ -679,15 +679,9 @@ impl<Pk: MiniscriptKey> fmt::Display for Policy<Pk> {
     }
 }
 
-impl<Pk> str::FromStr for Policy<Pk>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    <Pk as str::FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
-{
-    type Err = Error;
-
+impl_from_str!(
+    Policy<Pk>,
+    type Err = Error;,
     fn from_str(s: &str) -> Result<Policy<Pk>, Error> {
         for ch in s.as_bytes() {
             if *ch < 20 || *ch > 127 {
@@ -700,7 +694,7 @@ where
         policy.check_timelocks()?;
         Ok(policy)
     }
-}
+);
 
 serde_string_impl_pk!(Policy, "a miniscript concrete policy");
 
@@ -709,6 +703,7 @@ where
     Pk: MiniscriptKey + str::FromStr,
     Pk::Hash: str::FromStr,
     <Pk as str::FromStr>::Err: ToString,
+    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
 {
     /// Helper function for `from_tree` to parse subexpressions with
     /// names of the form x@y
@@ -815,16 +810,12 @@ where
     }
 }
 
-impl<Pk> FromTree for Policy<Pk>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    <Pk as str::FromStr>::Err: ToString,
-{
+impl_from_tree!(
+    Policy<Pk>,
     fn from_tree(top: &expression::Tree) -> Result<Policy<Pk>, Error> {
         Policy::from_tree_prob(top, false).map(|(_, result)| result)
     }
-}
+);
 
 /// Create a Huffman Tree from compiled [Miniscript] nodes
 #[cfg(feature = "compiler")]

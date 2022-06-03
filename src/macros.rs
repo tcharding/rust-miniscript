@@ -16,6 +16,40 @@ macro_rules! policy_str {
     ($($arg:tt)*) => ($crate::policy::Concrete::from_str(&format!($($arg)*)).unwrap())
 }
 
+/// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
+/// throughout the codebase.
+macro_rules! impl_from_tree {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty, $fn: item) => {
+        impl<Pk $(, $gen)*> $crate::expression::FromTree for $name
+        where
+            Pk: MiniscriptKey + core::str::FromStr,
+            Pk::Hash : core::str::FromStr,
+            <Pk as core::str::FromStr>::Err: $crate::prelude::ToString,
+            <<Pk as MiniscriptKey>::Hash as core::str::FromStr>::Err: $crate::prelude::ToString,
+            $($gen : $gen_con,)*
+            {
+                $fn
+            }
+    };
+}
+
+/// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
+/// throughout the codebase.
+macro_rules! impl_from_str {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty $(, $it: item)*) => {
+        impl<Pk $(, $gen)*> core::str::FromStr for $name
+        where
+            Pk: MiniscriptKey + core::str::FromStr,
+            Pk::Hash : core::str::FromStr,
+            <Pk as core::str::FromStr>::Err: $crate::prelude::ToString,
+            <<Pk as MiniscriptKey>::Hash as core::str::FromStr>::Err: $crate::prelude::ToString,
+            $($gen : $gen_con,)*
+            {
+                $($it)*
+            }
+    };
+}
+
 /// A macro that implements serde serialization and deserialization using the
 /// `fmt::Display` and `str::FromStr` traits.
 macro_rules! serde_string_impl_pk {

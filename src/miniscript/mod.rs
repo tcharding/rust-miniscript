@@ -54,7 +54,6 @@ use crate::miniscript::decode::Terminal;
 use crate::miniscript::types::extra_props::ExtData;
 use crate::miniscript::types::Type;
 use crate::{expression, Error, ForEach, ForEachKey, MiniscriptKey, ToPublicKey, TranslatePk};
-
 #[cfg(test)]
 mod ms_tests;
 
@@ -417,27 +416,17 @@ impl<Pk: MiniscriptKey, Ctx: ScriptContext> Miniscript<Pk, Ctx> {
     }
 }
 
-impl<Pk, Ctx> expression::FromTree for Arc<Miniscript<Pk, Ctx>>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    Ctx: ScriptContext,
-    <Pk as str::FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
-{
+impl_from_tree!(
+    ;Ctx; ScriptContext,
+    Arc<Miniscript<Pk, Ctx>>,
     fn from_tree(top: &expression::Tree) -> Result<Arc<Miniscript<Pk, Ctx>>, Error> {
         Ok(Arc::new(expression::FromTree::from_tree(top)?))
     }
-}
+);
 
-impl<Pk, Ctx> expression::FromTree for Miniscript<Pk, Ctx>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    Ctx: ScriptContext,
-    <Pk as str::FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
-{
+impl_from_tree!(
+    ;Ctx; ScriptContext,
+    Miniscript<Pk, Ctx>,
     /// Parse an expression tree into a Miniscript. As a general rule, this
     /// should not be called directly; rather go through the descriptor API.
     fn from_tree(top: &expression::Tree) -> Result<Miniscript<Pk, Ctx>, Error> {
@@ -449,27 +438,21 @@ where
             phantom: PhantomData,
         })
     }
-}
+);
 
-/// Parse a Miniscript from string and perform sanity checks
-/// See [Miniscript::from_str_insane] to parse scripts from string that
-/// do not clear the [Miniscript::sanity_check] checks.
-impl<Pk, Ctx> str::FromStr for Miniscript<Pk, Ctx>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    Ctx: ScriptContext,
-    <Pk as str::FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
-{
-    type Err = Error;
-
+impl_from_str!(
+    ;Ctx; ScriptContext,
+    Miniscript<Pk, Ctx>,
+    type Err = Error;,
+    /// Parse a Miniscript from string and perform sanity checks
+    /// See [Miniscript::from_str_insane] to parse scripts from string that
+    /// do not clear the [Miniscript::sanity_check] checks.
     fn from_str(s: &str) -> Result<Miniscript<Pk, Ctx>, Error> {
         let ms = Self::from_str_insane(s)?;
         ms.sanity_check()?;
         Ok(ms)
     }
-}
+);
 
 serde_string_impl_pk!(Miniscript, "a miniscript", Ctx; ScriptContext);
 
