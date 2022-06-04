@@ -698,13 +698,8 @@ impl_from_str!(
 
 serde_string_impl_pk!(Policy, "a miniscript concrete policy");
 
-impl<Pk> Policy<Pk>
-where
-    Pk: MiniscriptKey + str::FromStr,
-    Pk::Hash: str::FromStr,
-    <Pk as str::FromStr>::Err: ToString,
-    <<Pk as MiniscriptKey>::Hash as str::FromStr>::Err: ToString,
-{
+impl_block_str!(
+    Policy<Pk>,
     /// Helper function for `from_tree` to parse subexpressions with
     /// names of the form x@y
     fn from_tree_prob(
@@ -808,7 +803,7 @@ where
         }
         .map(|res| (frag_prob, res))
     }
-}
+);
 
 impl_from_tree!(
     Policy<Pk>,

@@ -50,6 +50,23 @@ macro_rules! impl_from_str {
     };
 }
 
+/// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
+/// throughout the codebase.
+macro_rules! impl_block_str {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty $(, $it: item)*) => {
+        impl<Pk $(, $gen)*> $name
+        where
+            Pk: MiniscriptKey + std::str::FromStr,
+            Pk::Hash : std::str::FromStr,
+            <Pk as std::str::FromStr>::Err: std::string::ToString,
+            <<Pk as MiniscriptKey>::Hash as std::str::FromStr>::Err: std::string::ToString,
+            $($gen : $gen_con,)*
+            {
+                $($it)*
+            }
+    };
+}
+
 /// A macro that implements serde serialization and deserialization using the
 /// `fmt::Display` and `str::FromStr` traits.
 macro_rules! serde_string_impl_pk {
