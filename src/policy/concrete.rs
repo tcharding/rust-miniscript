@@ -698,14 +698,14 @@ impl_from_str!(
 
 serde_string_impl_pk!(Policy, "a miniscript concrete policy");
 
+#[rustfmt::skip]
 impl_block_str!(
     Policy<Pk>,
     /// Helper function for `from_tree` to parse subexpressions with
     /// names of the form x@y
-    fn from_tree_prob(
-        top: &expression::Tree,
-        allow_prob: bool,
-    ) -> Result<(usize, Policy<Pk>), Error> {
+    fn from_tree_prob(top: &expression::Tree, allow_prob: bool,)
+        -> Result<(usize, Policy<Pk>), Error>
+    {
         let frag_prob;
         let frag_name;
         let mut name_split = top.name.split('@');

@@ -19,7 +19,11 @@ macro_rules! policy_str {
 /// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
 /// throughout the codebase.
 macro_rules! impl_from_tree {
-    ($(;$gen:ident; $gen_con:ident, )* $name: ty, $fn: item) => {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty,
+        $(#[$meta:meta])*
+        fn $fn:ident ( $($arg:ident : $type:ty),* ) -> $ret:ty
+        $body:block
+    ) => {
         impl<Pk $(, $gen)*> $crate::expression::FromTree for $name
         where
             Pk: MiniscriptKey + core::str::FromStr,
@@ -28,7 +32,11 @@ macro_rules! impl_from_tree {
             <<Pk as MiniscriptKey>::Hash as core::str::FromStr>::Err: $crate::prelude::ToString,
             $($gen : $gen_con,)*
             {
-                $fn
+
+                $(#[$meta])*
+                fn $fn($($arg: $type)* ) -> $ret {
+                    $body
+                }
             }
     };
 }
@@ -36,7 +44,12 @@ macro_rules! impl_from_tree {
 /// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
 /// throughout the codebase.
 macro_rules! impl_from_str {
-    ($(;$gen:ident; $gen_con:ident, )* $name: ty $(, $it: item)*) => {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty,
+        type Err = $err_ty:ty;,
+        $(#[$meta:meta])*
+        fn $fn:ident ( $($arg:ident : $type:ty),* ) -> $ret:ty
+        $body:block
+    ) => {
         impl<Pk $(, $gen)*> core::str::FromStr for $name
         where
             Pk: MiniscriptKey + core::str::FromStr,
@@ -45,7 +58,12 @@ macro_rules! impl_from_str {
             <<Pk as MiniscriptKey>::Hash as core::str::FromStr>::Err: $crate::prelude::ToString,
             $($gen : $gen_con,)*
             {
-                $($it)*
+                type Err = $err_ty;
+
+                $(#[$meta])*
+                fn $fn($($arg: $type)* ) -> $ret {
+                    $body
+                }
             }
     };
 }
@@ -53,7 +71,11 @@ macro_rules! impl_from_str {
 /// Macro for implementing FromTree trait. This avoids copying all the Pk::Associated type bounds
 /// throughout the codebase.
 macro_rules! impl_block_str {
-    ($(;$gen:ident; $gen_con:ident, )* $name: ty $(, $it: item)*) => {
+    ($(;$gen:ident; $gen_con:ident, )* $name: ty,
+        $(#[$meta:meta])*
+        $v:vis fn $fn:ident ( $($arg:ident : $type:ty, )* ) -> $ret:ty
+        $body:block
+    ) => {
         impl<Pk $(, $gen)*> $name
         where
             Pk: MiniscriptKey + std::str::FromStr,
@@ -62,7 +84,10 @@ macro_rules! impl_block_str {
             <<Pk as MiniscriptKey>::Hash as std::str::FromStr>::Err: std::string::ToString,
             $($gen : $gen_con,)*
             {
-                $($it)*
+                $(#[$meta])*
+                $v fn $fn($($arg: $type,)* ) -> $ret {
+                    $body
+                }
             }
     };
 }

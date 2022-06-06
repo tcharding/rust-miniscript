@@ -653,7 +653,7 @@ impl Descriptor<DescriptorPublicKey> {
 
 impl_from_tree!(
     Descriptor<Pk>,
-    /// Parse an expression tree into a descriptor
+    /// Parse an expression tree into a descriptor.
     fn from_tree(top: &expression::Tree) -> Result<Descriptor<Pk>, Error> {
         Ok(match (top.name, top.args.len() as u32) {
             ("pkh", 1) => Descriptor::Pkh(Pkh::from_tree(top)?),

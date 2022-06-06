@@ -350,7 +350,7 @@ impl_block_str!(
     /// Some of the analysis guarantees of miniscript are lost when dealing with
     /// insane scripts. In general, in a multi-party setting users should only
     /// accept sane scripts.
-    pub fn from_str_insane(s: &str) -> Result<Miniscript<Pk, Ctx>, Error>
+    pub fn from_str_insane(s: &str,) -> Result<Miniscript<Pk, Ctx>, Error>
     {
         // This checks for invalid ASCII chars
         let top = expression::Tree::from_str(s)?;

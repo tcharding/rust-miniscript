@@ -388,10 +388,11 @@ where
     }
 }
 
+#[rustfmt::skip]
 impl_block_str!(
     Tr<Pk>,
     // Helper function to parse taproot script path
-    fn parse_tr_script_spend(tree: &expression::Tree) -> Result<TapTree<Pk>, Error> {
+    fn parse_tr_script_spend(tree: &expression::Tree,) -> Result<TapTree<Pk>, Error> {
         match tree {
             expression::Tree { name, args } if !name.is_empty() && args.is_empty() => {
                 let script = Miniscript::<Pk, Tap>::from_str(name)?;
