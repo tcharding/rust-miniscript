@@ -20,7 +20,7 @@ pub struct StrKeyTranslator {
 }
 
 impl Translator<String, bitcoin::PublicKey, ()> for StrKeyTranslator {
-    fn f_pk(&mut self, pk: &String) -> Result<bitcoin::PublicKey, ()> {
+    fn pk(&mut self, pk: &String) -> Result<bitcoin::PublicKey, ()> {
         let key = self.pk_map.get(pk).copied().unwrap_or_else(|| {
             bitcoin::PublicKey::from_str(
                 "02c2122e30e73f7fe37986e3f81ded00158e94b7ad472369b83bbdd28a9a198a39",
@@ -30,14 +30,14 @@ impl Translator<String, bitcoin::PublicKey, ()> for StrKeyTranslator {
         Ok(key)
     }
 
-    fn f_pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
+    fn pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
         let hash = self.pkh_map.get(pkh).copied().unwrap_or_else(|| {
             hash160::Hash::from_str("be8f27af36217ba89c793c419f058cd4e2a54e26").unwrap()
         });
         Ok(hash)
     }
 
-    fn f_sha256(&mut self, _sha256: &String) -> Result<sha256::Hash, ()> {
+    fn sha256(&mut self, _sha256: &String) -> Result<sha256::Hash, ()> {
         // hard coded value
         let hash = sha256::Hash::from_str(
             "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",
@@ -56,7 +56,7 @@ pub struct StrXOnlyKeyTranslator {
 }
 
 impl Translator<String, bitcoin::XOnlyPublicKey, ()> for StrXOnlyKeyTranslator {
-    fn f_pk(&mut self, pk: &String) -> Result<bitcoin::XOnlyPublicKey, ()> {
+    fn pk(&mut self, pk: &String) -> Result<bitcoin::XOnlyPublicKey, ()> {
         let key = self.pk_map.get(pk).copied().unwrap_or_else(|| {
             bitcoin::XOnlyPublicKey::from_str(
                 "c2122e30e73f7fe37986e3f81ded00158e94b7ad472369b83bbdd28a9a198a39",
@@ -66,14 +66,14 @@ impl Translator<String, bitcoin::XOnlyPublicKey, ()> for StrXOnlyKeyTranslator {
         Ok(key)
     }
 
-    fn f_pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
+    fn pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
         let hash = self.pkh_map.get(pkh).copied().unwrap_or_else(|| {
             hash160::Hash::from_str("be8f27af36217ba89c793c419f058cd4e2a54e26").unwrap()
         });
         Ok(hash)
     }
 
-    fn f_sha256(&mut self, _sha256: &String) -> Result<sha256::Hash, ()> {
+    fn sha256(&mut self, _sha256: &String) -> Result<sha256::Hash, ()> {
         // hard coded value
         let hash = sha256::Hash::from_str(
             "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",

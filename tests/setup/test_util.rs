@@ -165,7 +165,7 @@ pub fn parse_insane_ms<Ctx: ScriptContext>(
 struct StrDescPubKeyTranslator<'a>(usize, &'a PubData);
 
 impl<'a> Translator<String, DescriptorPublicKey, ()> for StrDescPubKeyTranslator<'a> {
-    fn f_pk(&mut self, pk_str: &String) -> Result<DescriptorPublicKey, ()> {
+    fn pk(&mut self, pk_str: &String) -> Result<DescriptorPublicKey, ()> {
         let avail = !pk_str.ends_with("!");
         if avail {
             self.0 = self.0 + 1;
@@ -190,11 +190,11 @@ impl<'a> Translator<String, DescriptorPublicKey, ()> for StrDescPubKeyTranslator
         }
     }
 
-    fn f_pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, ()> {
-        self.f_pk(pkh)
+    fn pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, ()> {
+        self.pk(pkh)
     }
 
-    fn f_sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
+    fn sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
         let sha = sha256::Hash::from_str(sha256).unwrap();
         Ok(sha)
     }
@@ -207,7 +207,7 @@ impl<'a> Translator<String, DescriptorPublicKey, ()> for StrDescPubKeyTranslator
 struct StrTranslatorLoose<'a>(usize, &'a PubData);
 
 impl<'a> Translator<String, DescriptorPublicKey, ()> for StrTranslatorLoose<'a> {
-    fn f_pk(&mut self, pk_str: &String) -> Result<DescriptorPublicKey, ()> {
+    fn pk(&mut self, pk_str: &String) -> Result<DescriptorPublicKey, ()> {
         let avail = !pk_str.ends_with("!");
         if avail {
             self.0 = self.0 + 1;
@@ -236,11 +236,11 @@ impl<'a> Translator<String, DescriptorPublicKey, ()> for StrTranslatorLoose<'a> 
         }
     }
 
-    fn f_pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, ()> {
-        self.f_pk(pkh)
+    fn pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, ()> {
+        self.pk(pkh)
     }
 
-    fn f_sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
+    fn sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
         let sha = sha256::Hash::from_str(sha256).unwrap();
         Ok(sha)
     }

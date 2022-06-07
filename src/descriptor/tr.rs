@@ -611,7 +611,7 @@ where
         T: Translator<P, Q, E>,
     {
         let translate_desc = Tr {
-            internal_key: translate.f_pk(&self.internal_key)?,
+            internal_key: translate.pk(&self.internal_key)?,
             tree: match &self.tree {
                 Some(tree) => Some(tree.translate_helper(translate)?),
                 None => None,

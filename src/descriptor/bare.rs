@@ -346,6 +346,6 @@ where
     where
         T: Translator<P, Q, E>,
     {
-        Ok(Pkh::new(t.f_pk(&self.pk)?))
+        Ok(Pkh::new(t.pk(&self.pk)?))
     }
 }

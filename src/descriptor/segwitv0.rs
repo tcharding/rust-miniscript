@@ -459,6 +459,6 @@ where
     where
         T: Translator<P, Q, E>,
     {
-        Ok(Wpkh::new(t.f_pk(&self.pk)?).expect("Uncompressed keys in Wpkh"))
+        Ok(Wpkh::new(t.pk(&self.pk)?).expect("Uncompressed keys in Wpkh"))
     }
 }

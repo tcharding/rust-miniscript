@@ -129,11 +129,11 @@ impl<Pk: MiniscriptKey, Ctx: ScriptContext> Terminal<Pk, Ctx> {
         T: Translator<Pk, Q, E>,
     {
         let frag: Terminal<Q, CtxQ> = match *self {
-            Terminal::PkK(ref p) => Terminal::PkK(t.f_pk(p)?),
-            Terminal::PkH(ref p) => Terminal::PkH(t.f_pkh(p)?),
+            Terminal::PkK(ref p) => Terminal::PkK(t.pk(p)?),
+            Terminal::PkH(ref p) => Terminal::PkH(t.pkh(p)?),
             Terminal::After(n) => Terminal::After(n),
             Terminal::Older(n) => Terminal::Older(n),
-            Terminal::Sha256(ref x) => Terminal::Sha256(t.f_sha256(&x)?),
+            Terminal::Sha256(ref x) => Terminal::Sha256(t.sha256(&x)?),
             Terminal::Hash256(x) => Terminal::Hash256(x),
             Terminal::Ripemd160(x) => Terminal::Ripemd160(x),
             Terminal::Hash160(x) => Terminal::Hash160(x),
@@ -185,11 +185,11 @@ impl<Pk: MiniscriptKey, Ctx: ScriptContext> Terminal<Pk, Ctx> {
                 Terminal::Thresh(k, subs?)
             }
             Terminal::Multi(k, ref keys) => {
-                let keys: Result<Vec<Q>, _> = keys.iter().map(|k| t.f_pk(k)).collect();
+                let keys: Result<Vec<Q>, _> = keys.iter().map(|k| t.pk(k)).collect();
                 Terminal::Multi(k, keys?)
             }
             Terminal::MultiA(k, ref keys) => {
-                let keys: Result<Vec<Q>, _> = keys.iter().map(|k| t.f_pk(k)).collect();
+                let keys: Result<Vec<Q>, _> = keys.iter().map(|k| t.pk(k)).collect();
                 Terminal::MultiA(k, keys?)
             }
         };

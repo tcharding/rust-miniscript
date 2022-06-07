@@ -397,13 +397,13 @@ where
     Q: MiniscriptKey,
 {
     /// Translates public keys P -> Q.
-    fn f_pk(&mut self, pk: &P) -> Result<Q, E>;
+    fn pk(&mut self, pk: &P) -> Result<Q, E>;
 
     /// Translates public key hashes P::Hash -> Q::Hash.
-    fn f_pkh(&mut self, pkh: &P::Hash) -> Result<Q::Hash, E>;
+    fn pkh(&mut self, pkh: &P::Hash) -> Result<Q::Hash, E>;
 
     /// Translates sha256 hashes P::Sha256Hash -> Q::Sha256Hash.
-    fn f_sha256(&mut self, sha256: &P::Sha256Hash) -> Result<Q::Sha256Hash, E>;
+    fn sha256(&mut self, sha256: &P::Sha256Hash) -> Result<Q::Sha256Hash, E>;
 }
 
 /// Converts a descriptor using abstract keys to one using specific keys.

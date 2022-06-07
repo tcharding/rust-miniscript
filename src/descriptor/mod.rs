@@ -527,15 +527,15 @@ impl Descriptor<DescriptorPublicKey> {
         struct Derivator(u32);
 
         impl Translator<DescriptorPublicKey, DerivedDescriptorKey, ()> for Derivator {
-            fn f_pk(&mut self, pk: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
+            fn pk(&mut self, pk: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
                 Ok(pk.clone().derive(self.0))
             }
 
-            fn f_pkh(&mut self, pkh: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
+            fn pkh(&mut self, pkh: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
                 Ok(pkh.clone().derive(self.0))
             }
 
-            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+            fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
                 Ok(sha256.clone())
             }
         }
@@ -578,21 +578,21 @@ impl Descriptor<DescriptorPublicKey> {
             Translator<DerivedDescriptorKey, bitcoin::PublicKey, ConversionError>
             for Derivator<'a, C>
         {
-            fn f_pk(
+            fn pk(
                 &mut self,
                 pk: &DerivedDescriptorKey,
             ) -> Result<bitcoin::PublicKey, ConversionError> {
                 pk.derive_public_key(&self.0)
             }
 
-            fn f_pkh(
+            fn pkh(
                 &mut self,
                 pkh: &DerivedDescriptorKey,
             ) -> Result<bitcoin::hashes::hash160::Hash, ConversionError> {
                 Ok(pkh.derive_public_key(&self.0)?.to_pubkeyhash())
             }
 
-            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ConversionError> {
+            fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ConversionError> {
                 Ok(sha256.clone())
             }
         }
@@ -641,15 +641,15 @@ impl Descriptor<DescriptorPublicKey> {
         impl<'a, C: secp256k1::Signing> Translator<String, DescriptorPublicKey, Error>
             for KeyMapWrapper<'a, C>
         {
-            fn f_pk(&mut self, pk: &String) -> Result<DescriptorPublicKey, Error> {
+            fn pk(&mut self, pk: &String) -> Result<DescriptorPublicKey, Error> {
                 parse_key(pk, &mut self.0, self.1)
             }
 
-            fn f_pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, Error> {
+            fn pkh(&mut self, pkh: &String) -> Result<DescriptorPublicKey, Error> {
                 parse_key(pkh, &mut self.0, self.1)
             }
 
-            fn f_sha256(&mut self, sha256: &String) -> Result<sha256::Hash, Error> {
+            fn sha256(&mut self, sha256: &String) -> Result<sha256::Hash, Error> {
                 let hash =
                     sha256::Hash::from_str(sha256).map_err(|e| Error::Unexpected(e.to_string()))?;
                 Ok(hash)
@@ -669,15 +669,15 @@ impl Descriptor<DescriptorPublicKey> {
         struct KeyMapLookUp<'a>(&'a KeyMap);
 
         impl<'a> Translator<DescriptorPublicKey, String, ()> for KeyMapLookUp<'a> {
-            fn f_pk(&mut self, pk: &DescriptorPublicKey) -> Result<String, ()> {
+            fn pk(&mut self, pk: &DescriptorPublicKey) -> Result<String, ()> {
                 key_to_string(pk, self.0)
             }
 
-            fn f_pkh(&mut self, pkh: &DescriptorPublicKey) -> Result<String, ()> {
+            fn pkh(&mut self, pkh: &DescriptorPublicKey) -> Result<String, ()> {
                 key_to_string(pkh, self.0)
             }
 
-            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<String, ()> {
+            fn sha256(&mut self, sha256: &sha256::Hash) -> Result<String, ()> {
                 Ok(sha256.to_string())
             }
         }

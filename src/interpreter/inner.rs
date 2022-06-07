@@ -378,15 +378,15 @@ impl<Ctx: ScriptContext> ToNoChecks for Miniscript<bitcoin::PublicKey, Ctx> {
         struct TranslateFullPk;
 
         impl Translator<bitcoin::PublicKey, BitcoinKey, ()> for TranslateFullPk {
-            fn f_pk(&mut self, pk: &bitcoin::PublicKey) -> Result<BitcoinKey, ()> {
+            fn pk(&mut self, pk: &bitcoin::PublicKey) -> Result<BitcoinKey, ()> {
                 Ok(BitcoinKey::Fullkey(*pk))
             }
 
-            fn f_pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
+            fn pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
                 Ok(TypedHash160::FullKey(*pkh))
             }
 
-            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+            fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
                 Ok(sha256.clone())
             }
         }
@@ -403,15 +403,15 @@ impl<Ctx: ScriptContext> ToNoChecks for Miniscript<bitcoin::XOnlyPublicKey, Ctx>
         struct TranslateXOnlyPk;
 
         impl Translator<bitcoin::XOnlyPublicKey, BitcoinKey, ()> for TranslateXOnlyPk {
-            fn f_pk(&mut self, pk: &bitcoin::XOnlyPublicKey) -> Result<BitcoinKey, ()> {
+            fn pk(&mut self, pk: &bitcoin::XOnlyPublicKey) -> Result<BitcoinKey, ()> {
                 Ok(BitcoinKey::XOnlyPublicKey(*pk))
             }
 
-            fn f_pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
+            fn pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
                 Ok(TypedHash160::XonlyKey(*pkh))
             }
 
-            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+            fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
                 Ok(sha256.clone())
             }
         }

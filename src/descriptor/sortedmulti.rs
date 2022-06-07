@@ -102,7 +102,7 @@ impl<Pk: MiniscriptKey, Ctx: ScriptContext> SortedMultiVec<Pk, Ctx> {
         T: Translator<Pk, Q, FuncError>,
         Q: MiniscriptKey,
     {
-        let pks: Result<Vec<Q>, _> = self.pks.iter().map(|pk| t.f_pk(pk)).collect();
+        let pks: Result<Vec<Q>, _> = self.pks.iter().map(|pk| t.pk(pk)).collect();
         Ok(SortedMultiVec {
             k: self.k,
             pks: pks?,

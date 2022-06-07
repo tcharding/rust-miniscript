@@ -940,14 +940,14 @@ struct XOnlyHashLookUp(
 impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
     for XOnlyHashLookUp
 {
-    fn f_pk(
+    fn pk(
         &mut self,
         xpk: &DescriptorPublicKey,
     ) -> Result<bitcoin::PublicKey, descriptor::ConversionError> {
         xpk.derive_public_key(&self.1)
     }
 
-    fn f_pkh(
+    fn pkh(
         &mut self,
         xpk: &DescriptorPublicKey,
     ) -> Result<hash160::Hash, descriptor::ConversionError> {
@@ -958,7 +958,7 @@ impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionE
         Ok(hash)
     }
 
-    fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
+    fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
         Ok(sha256.clone())
     }
 }
@@ -973,7 +973,7 @@ struct KeySourceLookUp(
 impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
     for KeySourceLookUp
 {
-    fn f_pk(
+    fn pk(
         &mut self,
         xpk: &DescriptorPublicKey,
     ) -> Result<bitcoin::PublicKey, descriptor::ConversionError> {
@@ -985,14 +985,14 @@ impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionE
         Ok(derived)
     }
 
-    fn f_pkh(
+    fn pkh(
         &mut self,
         xpk: &DescriptorPublicKey,
     ) -> Result<hash160::Hash, descriptor::ConversionError> {
-        Ok(self.f_pk(xpk)?.to_pubkeyhash())
+        Ok(self.pk(xpk)?.to_pubkeyhash())
     }
 
-    fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
+    fn sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
         Ok(sha256.clone())
     }
 }

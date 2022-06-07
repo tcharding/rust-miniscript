@@ -344,17 +344,17 @@ impl<Pk: MiniscriptKey> Policy<Pk> {
     /// // we would use the general Translator Trait.
     /// impl Translator<String, bitcoin::PublicKey, ()> for StrPkTranslator {
     ///     // Provides the translation public keys P -> Q
-    ///     fn f_pk(&mut self, pk: &String) -> Result<bitcoin::PublicKey, ()> {
+    ///     fn pk(&mut self, pk: &String) -> Result<bitcoin::PublicKey, ()> {
     ///         self.pk_map.get(pk).copied().ok_or(()) // Dummy Err
     ///     }
     ///
     ///     // If our policy also contained other fragments, we could provide the translation here.
-    ///     fn f_pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
+    ///     fn pkh(&mut self, pkh: &String) -> Result<hash160::Hash, ()> {
     ///         unreachable!("Policy does not contain any pkh fragment");
     ///     }
     ///
     ///     // If our policy also contained other fragments, we could provide the translation here.
-    ///     fn f_sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
+    ///     fn sha256(&mut self, sha256: &String) -> Result<sha256::Hash, ()> {
     ///         unreachable!("Policy does not contain any sha256 fragment");
     ///     }
     /// }
@@ -385,8 +385,8 @@ impl<Pk: MiniscriptKey> Policy<Pk> {
         match *self {
             Policy::Unsatisfiable => Ok(Policy::Unsatisfiable),
             Policy::Trivial => Ok(Policy::Trivial),
-            Policy::Key(ref pk) => t.f_pk(pk).map(Policy::Key),
-            Policy::Sha256(ref h) => t.f_sha256(h).map(Policy::Sha256),
+            Policy::Key(ref pk) => t.pk(pk).map(Policy::Key),
+            Policy::Sha256(ref h) => t.sha256(h).map(Policy::Sha256),
             Policy::Hash256(ref h) => Ok(Policy::Hash256(*h)),
             Policy::Ripemd160(ref h) => Ok(Policy::Ripemd160(*h)),
             Policy::Hash160(ref h) => Ok(Policy::Hash160(*h)),
