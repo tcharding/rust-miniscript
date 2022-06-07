@@ -396,13 +396,13 @@ where
     P: MiniscriptKey,
     Q: MiniscriptKey,
 {
-    /// Provides the translation public keys P -> Q
+    /// Translates public keys P -> Q.
     fn f_pk(&mut self, pk: &P) -> Result<Q, E>;
 
-    /// Provides the translation public keys hashes P::Hash -> Q::Hash
+    /// Translates public key hashes P::Hash -> Q::Hash.
     fn f_pkh(&mut self, pkh: &P::Hash) -> Result<Q::Hash, E>;
 
-    /// Provides the translation from P::Sha256Hash -> Q::Sha256Hash
+    /// Translates sha256 hashes P::Sha256Hash -> Q::Sha256Hash.
     fn f_sha256(&mut self, sha256: &P::Sha256Hash) -> Result<Q::Sha256Hash, E>;
 }
 
