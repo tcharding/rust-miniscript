@@ -20,7 +20,7 @@ use bitcoin::util::taproot::{ControlBlock, TAPROOT_ANNEX_PREFIX};
 use super::{stack, BitcoinKey, Error, Stack, TypedHash160};
 use crate::miniscript::context::{NoChecks, ScriptContext};
 use crate::prelude::*;
-use crate::{BareCtx, Legacy, Miniscript, MiniscriptKey, PkTranslator, Segwitv0, Tap};
+use crate::{BareCtx, Legacy, Miniscript, MiniscriptKey, Translator, Segwitv0, Tap};
 
 /// Attempts to parse a slice as a Bitcoin public key, checking compressedness
 /// if asked to, but otherwise dropping it
@@ -377,13 +377,17 @@ impl<Ctx: ScriptContext> ToNoChecks for Miniscript<bitcoin::PublicKey, Ctx> {
     fn to_no_checks_ms(&self) -> Miniscript<BitcoinKey, NoChecks> {
         struct TranslateFullPk;
 
-        impl PkTranslator<bitcoin::PublicKey, BitcoinKey, ()> for TranslateFullPk {
+        impl Translator<bitcoin::PublicKey, BitcoinKey, ()> for TranslateFullPk {
             fn f_pk(&mut self, pk: &bitcoin::PublicKey) -> Result<BitcoinKey, ()> {
                 Ok(BitcoinKey::Fullkey(*pk))
             }
 
             fn f_pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
                 Ok(TypedHash160::FullKey(*pkh))
+            }
+
+            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+                Ok(sha256.clone())
             }
         }
 
@@ -398,13 +402,17 @@ impl<Ctx: ScriptContext> ToNoChecks for Miniscript<bitcoin::XOnlyPublicKey, Ctx>
         // specify the () error type as this cannot error
         struct TranslateXOnlyPk;
 
-        impl PkTranslator<bitcoin::XOnlyPublicKey, BitcoinKey, ()> for TranslateXOnlyPk {
+        impl Translator<bitcoin::XOnlyPublicKey, BitcoinKey, ()> for TranslateXOnlyPk {
             fn f_pk(&mut self, pk: &bitcoin::XOnlyPublicKey) -> Result<BitcoinKey, ()> {
                 Ok(BitcoinKey::XOnlyPublicKey(*pk))
             }
 
             fn f_pkh(&mut self, pkh: &hash160::Hash) -> Result<TypedHash160, ()> {
                 Ok(TypedHash160::XonlyKey(*pkh))
+            }
+
+            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+                Ok(sha256.clone())
             }
         }
         self.real_translate_pk(&mut TranslateXOnlyPk)

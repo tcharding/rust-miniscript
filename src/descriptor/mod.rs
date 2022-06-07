@@ -37,8 +37,8 @@ use self::checksum::verify_checksum;
 use crate::miniscript::{Legacy, Miniscript, Segwitv0};
 use crate::prelude::*;
 use crate::{
-    expression, miniscript, BareCtx, Error, ForEach, ForEachKey, MiniscriptKey, PkTranslator,
-    Satisfier, ToPublicKey, TranslatePk, Translator,
+    expression, miniscript, BareCtx, Error, ForEach, ForEachKey, MiniscriptKey, Translator,
+    Satisfier, ToPublicKey, TranslatePk,
 };
 
 mod bare;
@@ -526,13 +526,17 @@ impl Descriptor<DescriptorPublicKey> {
     pub fn derive(&self, index: u32) -> Descriptor<DerivedDescriptorKey> {
         struct Derivator(u32);
 
-        impl PkTranslator<DescriptorPublicKey, DerivedDescriptorKey, ()> for Derivator {
+        impl Translator<DescriptorPublicKey, DerivedDescriptorKey, ()> for Derivator {
             fn f_pk(&mut self, pk: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
                 Ok(pk.clone().derive(self.0))
             }
 
             fn f_pkh(&mut self, pkh: &DescriptorPublicKey) -> Result<DerivedDescriptorKey, ()> {
                 Ok(pkh.clone().derive(self.0))
+            }
+
+            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ()> {
+                Ok(sha256.clone())
             }
         }
         self.translate_pk(&mut Derivator(index))
@@ -571,7 +575,7 @@ impl Descriptor<DescriptorPublicKey> {
         struct Derivator<'a, C: secp256k1::Verification>(&'a secp256k1::Secp256k1<C>);
 
         impl<'a, C: secp256k1::Verification>
-            PkTranslator<DerivedDescriptorKey, bitcoin::PublicKey, ConversionError>
+            Translator<DerivedDescriptorKey, bitcoin::PublicKey, ConversionError>
             for Derivator<'a, C>
         {
             fn f_pk(
@@ -586,6 +590,10 @@ impl Descriptor<DescriptorPublicKey> {
                 pkh: &DerivedDescriptorKey,
             ) -> Result<bitcoin::hashes::hash160::Hash, ConversionError> {
                 Ok(pkh.derive_public_key(&self.0)?.to_pubkeyhash())
+            }
+
+            fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, ConversionError> {
+                Ok(sha256.clone())
             }
         }
 

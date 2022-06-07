@@ -24,7 +24,7 @@ use core::ops::Deref;
 #[cfg(feature = "std")]
 use std::error;
 
-use bitcoin::hashes::{hash160, ripemd160, sha256d};
+use bitcoin::hashes::{hash160, ripemd160, sha256d, sha256};
 use bitcoin::secp256k1::{self, Secp256k1, VerifyOnly};
 use bitcoin::util::psbt::{self, PartiallySignedTransaction as Psbt};
 use bitcoin::util::sighash::SighashCache;
@@ -36,7 +36,7 @@ use crate::miniscript::limits::SEQUENCE_LOCKTIME_DISABLE_FLAG;
 use crate::miniscript::satisfy::{After, Older};
 use crate::prelude::*;
 use crate::{
-    descriptor, interpreter, Descriptor, DescriptorPublicKey, MiniscriptKey, PkTranslator,
+    descriptor, interpreter, Descriptor, DescriptorPublicKey, MiniscriptKey, Translator,
     Preimage32, Satisfier, ToPublicKey, TranslatePk,
 };
 
@@ -937,7 +937,7 @@ struct XOnlyHashLookUp(
     pub secp256k1::Secp256k1<VerifyOnly>,
 );
 
-impl PkTranslator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
+impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
     for XOnlyHashLookUp
 {
     fn f_pk(
@@ -957,6 +957,10 @@ impl PkTranslator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::Conversio
         self.0.insert(hash, xonly);
         Ok(hash)
     }
+
+    fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
+        Ok(sha256.clone())
+    }
 }
 
 // Traverse the pkh lookup while maintaining a reverse map for storing the map
@@ -966,7 +970,7 @@ struct KeySourceLookUp(
     pub secp256k1::Secp256k1<VerifyOnly>,
 );
 
-impl PkTranslator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
+impl Translator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::ConversionError>
     for KeySourceLookUp
 {
     fn f_pk(
@@ -986,6 +990,10 @@ impl PkTranslator<DescriptorPublicKey, bitcoin::PublicKey, descriptor::Conversio
         xpk: &DescriptorPublicKey,
     ) -> Result<hash160::Hash, descriptor::ConversionError> {
         Ok(self.f_pk(xpk)?.to_pubkeyhash())
+    }
+
+    fn f_sha256(&mut self, sha256: &sha256::Hash) -> Result<sha256::Hash, descriptor::ConversionError> {
+        Ok(sha256.clone())
     }
 }
 
