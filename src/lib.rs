@@ -390,7 +390,8 @@ impl hash::Hash for DummySha256Hash {
     }
 }
 
-/// Provides the conversion information required in [`TranslatePk`]
+/// Describes an object that can translate various keys and hashes from one key to the type
+/// associated with the other key. Used by the [`TranslatePk`] trait to do the actual translations.
 pub trait Translator<P, Q, E>
 where
     P: MiniscriptKey,
@@ -406,12 +407,8 @@ where
     fn sha256(&mut self, sha256: &P::Sha256Hash) -> Result<Q::Sha256Hash, E>;
 }
 
-/// Converts a descriptor using abstract keys to one using specific keys.
-///
-/// # Panics
-///
-/// If `fpk` returns an uncompressed key when converting to a segwit descriptor.
-/// To prevent this panic, ensure `fpk` returns an error in this case instead.
+/// Converts a descriptor using abstract keys to one using specific keys. Uses translator `t` to do
+/// the actual translation function calls.
 pub trait TranslatePk<P, Q>
 where
     P: MiniscriptKey,
@@ -420,9 +417,8 @@ where
     /// The associated output type. This must be `Self<Q>`.
     type Output;
 
-    /// Translates a struct from one generic to another where the translation
-    /// for Pk is provided by function `fpk`, and translation for PkH is
-    /// provided by function `fpkh`.
+    /// Translates a struct from one generic to another where the translations
+    /// for Pk are provided by the given [`Translator`].
     fn translate_pk<T, E>(&self, translator: &mut T) -> Result<Self::Output, E>
     where
         T: Translator<P, Q, E>;
