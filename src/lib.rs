@@ -460,7 +460,7 @@ where
     /// Translates a struct from one generic to another where the translation
     /// for Pk is provided by function `fpk`, and translation for PkH is
     /// provided by function `fpkh`.
-    fn translate_pk<T, E>(&self, translate: &mut T) -> Result<Self::Output, E>
+    fn translate_pk<T, E>(&self, translator: &mut T) -> Result<Self::Output, E>
     where
         T: Translator<P, Q, E>;
 }
