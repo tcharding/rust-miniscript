@@ -1,3 +1,7 @@
+# 7.1.0 - Sept X, 2022
+
+- bump `rust-bitcoin` to 0.29.1
+
 # 7.0.0 - April 20, 2022
 
 - Fixed miniscript type system bug. This is a security vulnerability and users are strongly encouraged to upgrade.
