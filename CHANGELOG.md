@@ -1,6 +1,19 @@
 # 7.1.0 - Sept X, 2022
 
 - bump `rust-bitcoin` to 0.29.1
+- Update the MSRV to Rust 1.41.1 and enable edition 2018.
+- Add `Hash256` associated type
+- Re-name `as_public` <-> to_public
+- Implement `hash::Hash`
+- Rename `stackelem` to `stack_elem`
+- Implement `source` for error types
+- Implement `is_empty` on `TokenIter`
+- Add feature "serde"
+- Clean up the examples
+- several bugfixes
+- several refactorings
+- rustfmt configuration by crate
+- Clear some compiler and clippy warnings
 
 # 7.0.0 - April 20, 2022
 
