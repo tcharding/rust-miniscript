@@ -1,4 +1,4 @@
-# 7.1.0 - Sept X, 2022
+# 8.0.0 - Sept X, 2022
 
 - bump `rust-bitcoin` to 0.29.1
 - Update the MSRV to Rust 1.41.1 and enable edition 2018.
