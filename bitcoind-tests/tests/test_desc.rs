@@ -7,7 +7,6 @@
 use std::collections::BTreeMap;
 use std::{error, fmt};
 
-use miniscript::bitcoin;
 use actual_rand as rand;
 use bitcoin::blockdata::witness::Witness;
 use bitcoin::hashes::{sha256d, Hash};
@@ -16,10 +15,11 @@ use bitcoin::util::sighash::SighashCache;
 use bitcoin::util::taproot::{LeafVersion, TapLeafHash};
 use bitcoin::util::{psbt, sighash};
 use bitcoin::{
-    secp256k1, Amount, LockTime, OutPoint, SchnorrSig, Script, Sequence, Transaction, TxIn,
-    TxOut, Txid,
+    secp256k1, Amount, LockTime, OutPoint, SchnorrSig, Script, Sequence, Transaction, TxIn, TxOut,
+    Txid,
 };
 use bitcoind::bitcoincore_rpc::{json, Client, RpcApi};
+use miniscript::bitcoin;
 use miniscript::psbt::{PsbtExt, PsbtInputExt};
 use miniscript::{Descriptor, Miniscript, ScriptContext, ToPublicKey};
 mod setup;
@@ -181,7 +181,7 @@ pub fn test_desc_satisfy(
                 rand::thread_rng().fill_bytes(&mut aux_rand);
                 let schnorr_sig =
                     secp.sign_schnorr_with_aux_rand(&msg, &internal_keypair, &aux_rand);
-                psbt.inputs[0].tap_key_sig = Some(SchnorrSig {
+                psbt.inputs[0].tap_key_sig = Some(bitcoin::crypto::taproot::Signature {
                     sig: schnorr_sig,
                     hash_ty: hash_ty,
                 });
@@ -213,7 +213,7 @@ pub fn test_desc_satisfy(
                 let (x_only_pk, _parity) = secp256k1::XOnlyPublicKey::from_keypair(&keypair);
                 psbt.inputs[0].tap_script_sigs.insert(
                     (x_only_pk, leaf_hash),
-                    bitcoin::SchnorrSig {
+                    bitcoin::crypto::taproot::Signature {
                         sig,
                         hash_ty: hash_ty,
                     },
@@ -268,7 +268,7 @@ pub fn test_desc_satisfy(
                 assert!(secp.verify_ecdsa(&msg, &sig, &pk.inner).is_ok());
                 psbt.inputs[0].partial_sigs.insert(
                     pk,
-                    bitcoin::EcdsaSig {
+                    bitcoin::crypto::ecdsa::Signature {
                         sig,
                         hash_ty: hash_ty,
                     },
