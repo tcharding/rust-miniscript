@@ -116,7 +116,7 @@ mod macros;
 #[macro_use]
 mod pub_macros;
 
-use bitcoin_private::hex::exts::DisplayHex;
+use private::hex::exts::DisplayHex;
 pub use pub_macros::*;
 
 pub mod descriptor;

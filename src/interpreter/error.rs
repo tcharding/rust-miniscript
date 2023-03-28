@@ -7,7 +7,7 @@ use std::error;
 
 use bitcoin::hashes::hash160;
 use bitcoin::{secp256k1, taproot};
-use bitcoin_private::hex::display::DisplayHex;
+use private::hex::display::DisplayHex;
 
 use super::BitcoinKey;
 use crate::prelude::*;

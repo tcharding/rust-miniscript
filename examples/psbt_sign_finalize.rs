@@ -2,15 +2,14 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use actual_base64 as base64;
-use bitcoin::consensus::serialize;
-use bitcoin::util::sighash::SighashCache;
-use bitcoin::{PackedLockTime, PrivateKey};
 use miniscript::bitcoin::consensus::encode::deserialize;
 use miniscript::bitcoin::hashes::hex::FromHex;
-use miniscript::bitcoin::util::psbt;
-use miniscript::bitcoin::util::psbt::PartiallySignedTransaction as Psbt;
+use miniscript::bitcoin::locktime::absolute::LockTime;
+use miniscript::bitcoin::psbt::Psbt;
+use miniscript::bitcoin::sighash::SighashCache;
 use miniscript::bitcoin::{
-    self, secp256k1, Address, Network, OutPoint, Script, Sequence, Transaction, TxIn, TxOut,
+    self, psbt, secp256k1, Address, Network, OutPoint, PrivateKey, Script, Sequence, Transaction,
+    TxIn, TxOut,
 };
 use miniscript::psbt::{PsbtExt, PsbtInputExt};
 use miniscript::Descriptor;
@@ -72,7 +71,7 @@ fn main() {
 
     let spend_tx = Transaction {
         version: 2,
-        lock_time: PackedLockTime(5000),
+        lock_time: LockTime::from_consensus(5000),
         input: vec![],
         output: vec![],
     };
@@ -95,7 +94,8 @@ fn main() {
 
     let amount = 100000000;
 
-    let (outpoint, witness_utxo) = get_vout(&depo_tx, bridge_descriptor.script_pubkey());
+    let (outpoint, witness_utxo) =
+        get_vout(&depo_tx, bridge_descriptor.script_pubkey().as_script());
 
     let mut txin = TxIn::default();
     txin.previous_output = outpoint;
@@ -104,7 +104,7 @@ fn main() {
     psbt.unsigned_tx.input.push(txin);
 
     psbt.unsigned_tx.output.push(TxOut {
-        script_pubkey: receiver.script_pubkey(),
+        script_pubkey: receiver.assume_checked().script_pubkey(),
         value: amount / 5 - 500,
     });
 
@@ -149,7 +149,7 @@ fn main() {
 
     psbt.inputs[0].partial_sigs.insert(
         pk1,
-        bitcoin::crypto::ecdsa::Signature {
+        bitcoin::ecdsa::Signature {
             sig: sig1,
             hash_ty: hash_ty,
         },
@@ -157,7 +157,7 @@ fn main() {
 
     println!("{:#?}", psbt);
 
-    let serialized = serialize(&psbt);
+    let serialized = psbt.serialize_hex();
     println!("{}", base64::encode(&serialized));
 
     psbt.finalize_mut(&secp256k1).unwrap();
@@ -168,9 +168,9 @@ fn main() {
 }
 
 // Find the Outpoint by spk
-fn get_vout(tx: &Transaction, spk: Script) -> (OutPoint, TxOut) {
+fn get_vout(tx: &Transaction, spk: &Script) -> (OutPoint, TxOut) {
     for (i, txout) in tx.clone().output.into_iter().enumerate() {
-        if spk == txout.script_pubkey {
+        if spk == txout.script_pubkey.as_script() {
             return (OutPoint::new(tx.txid(), i as u32), txout);
         }
     }
