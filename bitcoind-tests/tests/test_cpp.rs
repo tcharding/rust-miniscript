@@ -15,7 +15,7 @@ use bitcoin::transaction::OutPointExt as _;
 use bitcoin::{
     psbt, secp256k1, transaction, Amount, OutPoint, Sequence, Transaction, TxIn, TxOut, Txid,
 };
-use bitcoind::{AddressType, Client};
+use node::{AddressType, Client};
 use miniscript::bitcoin::absolute;
 use miniscript::psbt::PsbtExt;
 use miniscript::{bitcoin, DefiniteDescriptorKey, Descriptor};

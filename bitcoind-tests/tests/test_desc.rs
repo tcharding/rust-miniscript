@@ -12,13 +12,13 @@ use bitcoin::blockdata::witness::Witness;
 use bitcoin::hashes::sha256d;
 use bitcoin::psbt::Psbt;
 use bitcoin::sighash::SighashCache;
-use bitcoin::taproot::{LeafVersion, TapLeafHash, TapTweakHashExt as _, TapLeafHashExt as _};
+use bitcoin::taproot::{LeafVersion, TapLeafHash};
 use bitcoin::transaction::OutPointExt as _;
 use bitcoin::{
     absolute, psbt, secp256k1, sighash, transaction, Amount, OutPoint, Sequence, Transaction, TxIn,
     TxOut, Txid,
 };
-use bitcoind::{AddressType, Client};
+use node::{AddressType, Client};
 use miniscript::bitcoin::{self, ecdsa, taproot, ScriptBuf};
 use miniscript::psbt::{PsbtExt, PsbtInputExt};
 use miniscript::{Descriptor, Miniscript, ScriptContext, ToPublicKey};
@@ -178,7 +178,7 @@ pub fn test_desc_satisfy(
                 let mut aux_rand = [0u8; 32];
                 rand::thread_rng().fill_bytes(&mut aux_rand);
                 let schnorr_sig =
-                    secp.sign_schnorr_with_aux_rand(&msg, &internal_keypair, &aux_rand);
+                    secp.sign_schnorr_with_aux_rand(msg.as_ref(), &internal_keypair, &aux_rand);
                 psbt.inputs[0].tap_key_sig =
                     Some(taproot::Signature { signature: schnorr_sig, sighash_type });
             } else {
@@ -202,7 +202,7 @@ pub fn test_desc_satisfy(
                 let msg = secp256k1::Message::from_digest(sighash_msg.to_byte_array());
                 let mut aux_rand = [0u8; 32];
                 rand::thread_rng().fill_bytes(&mut aux_rand);
-                let signature = secp.sign_schnorr_with_aux_rand(&msg, &keypair, &aux_rand);
+                let signature = secp.sign_schnorr_with_aux_rand(msg.as_ref(), &keypair, &aux_rand);
                 let x_only_pk =
                     x_only_pks[xonly_keypairs.iter().position(|&x| x == keypair).unwrap()];
                 psbt.inputs[0]

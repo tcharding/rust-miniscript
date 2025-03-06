@@ -1,11 +1,11 @@
 extern crate miniscript;
 
-use bitcoind::client::bitcoin;
+use node::client::bitcoin;
 
 pub mod test_util;
 
 // Launch an instance of bitcoind with
-pub fn setup() -> bitcoind::BitcoinD {
+pub fn setup() -> node::Node {
     // Create env var BITCOIND_EXE_PATH to point to the ../bitcoind/bin/bitcoind binary
     let key = "BITCOIND_EXE";
     if std::env::var(key).is_err() {
@@ -23,8 +23,8 @@ pub fn setup() -> bitcoind::BitcoinD {
         std::env::set_var(key, bitcoind_path);
     }
 
-    let exe_path = bitcoind::exe_path().unwrap();
-    let bitcoind = bitcoind::BitcoinD::new(exe_path).unwrap();
+    let exe_path = node::exe_path().unwrap();
+    let bitcoind = node::Node::new(exe_path).unwrap();
     let cl = &bitcoind.client;
     // generate to an address by the wallet. And wait for funds to mature
     let addr = cl.new_address().unwrap();
