@@ -9,7 +9,7 @@ use core::{fmt, mem};
 #[cfg(feature = "std")]
 use std::error;
 
-use bitcoin::hashes::{hash160, ripemd160, sha256, Hash};
+use bitcoin::hashes::{hash160, ripemd160, sha256};
 use sync::Arc;
 
 use crate::iter::TreeLike;
@@ -441,9 +441,11 @@ pub fn parse<Ctx: ScriptContext>(
                                     ))?
                                 },
                                 Tk::Hash256, Tk::Verify, Tk::Equal, Tk::Num(32), Tk::Size => {
+                                    let mut array: [u8; 32] = [0; 32];
+                                    array.copy_from_slice(&hash);
                                     non_term.push(NonTerm::Verify);
                                     term.reduce0(Terminal::Hash256(
-                                        hash256::Hash::from_slice(hash).expect("valid size")
+                                        hash256::Hash::from_byte_array(array)
                                     ))?
                                 },
                             ),
@@ -486,9 +488,13 @@ pub fn parse<Ctx: ScriptContext>(
                             Tk::Verify,
                             Tk::Equal,
                             Tk::Num(32),
-                            Tk::Size => term.reduce0(Terminal::Hash256(
-                                hash256::Hash::from_slice(hash).expect("valid size")
-                            ))?,
+                            Tk::Size => {
+                                let mut array: [u8; 32] = [0; 32];
+                                array.copy_from_slice(&hash);
+                                term.reduce0(Terminal::Hash256(
+                                    hash256::Hash::from_byte_array(array)
+                                ))?
+                            },
                         ),
                         Tk::Hash20(hash) => match_token!(
                             tokens,

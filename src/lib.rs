@@ -130,7 +130,7 @@ mod util;
 
 use core::{fmt, hash, str};
 
-use bitcoin::hashes::{hash160, ripemd160, sha256, Hash};
+use bitcoin::hashes::{hash160, ripemd160, sha256};
 use bitcoin::hex::DisplayHex;
 use bitcoin::{script, Opcode};
 
@@ -422,7 +422,7 @@ pub enum Error {
     /// rust-bitcoin address error
     AddrError(bitcoin::address::ParseError),
     /// rust-bitcoin p2sh address error
-    AddrP2shError(bitcoin::address::P2shError),
+    RedeemScriptSizeError(bitcoin::script::RedeemScriptSizeError),
     /// While parsing backward, hit beginning of script
     UnexpectedStart,
     /// Got something we were not expecting
@@ -498,7 +498,7 @@ impl fmt::Display for Error {
             },
             Error::Script(ref e) => fmt::Display::fmt(e, f),
             Error::AddrError(ref e) => fmt::Display::fmt(e, f),
-            Error::AddrP2shError(ref e) => fmt::Display::fmt(e, f),
+            Error::RedeemScriptSizeError(ref e) => fmt::Display::fmt(e, f),
             Error::UnexpectedStart => f.write_str("unexpected start of script"),
             Error::Unexpected(ref s) => write!(f, "unexpected «{}»", s),
             Error::UnknownWrapper(ch) => write!(f, "unknown wrapper «{}:»", ch),
@@ -566,7 +566,7 @@ impl std::error::Error for Error {
             | MultipathDescLenMismatch => None,
             Script(e) => Some(e),
             AddrError(e) => Some(e),
-            AddrP2shError(e) => Some(e),
+            RedeemScriptSizeError(e) => Some(e),
             Secp(e) => Some(e),
             #[cfg(feature = "compiler")]
             CompilerError(e) => Some(e),
@@ -615,8 +615,8 @@ impl From<bitcoin::address::ParseError> for Error {
 }
 
 #[doc(hidden)]
-impl From<bitcoin::address::P2shError> for Error {
-    fn from(e: bitcoin::address::P2shError) -> Error { Error::AddrP2shError(e) }
+impl From<bitcoin::script::RedeemScriptSizeError> for Error {
+    fn from(e: bitcoin::script::RedeemScriptSizeError) -> Error { Error::RedeemScriptSizeError(e) }
 }
 
 #[doc(hidden)]

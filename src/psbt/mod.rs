@@ -12,13 +12,16 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-use bitcoin::hashes::{hash160, sha256d, Hash};
+use bitcoin::address::script_pubkey::ScriptExt as _;
+use bitcoin::hashes::{hash160, sha256d};
 use bitcoin::psbt::{self, Psbt};
+use bitcoin::script::ScriptExt as _;
 #[cfg(not(test))] // https://github.com/rust-lang/rust/issues/121684
 use bitcoin::secp256k1;
 use bitcoin::secp256k1::{Secp256k1, VerifyOnly};
 use bitcoin::sighash::{self, SighashCache};
 use bitcoin::taproot::{self, ControlBlock, LeafVersion, TapLeafHash};
+use bitcoin::transaction::TxInExt as _;
 use bitcoin::{absolute, bip32, relative, transaction, Script, ScriptBuf};
 
 use crate::miniscript::context::SigType;
@@ -1189,7 +1192,8 @@ fn update_item_with_descriptor_helper<F: PsbtFields>(
             Descriptor::Sh(sh) => match sh.as_inner() {
                 descriptor::ShInner::Wsh(wsh) => {
                     *item.witness_script() = Some(wsh.inner_script());
-                    *item.redeem_script() = Some(wsh.inner_script().to_p2wsh());
+                    *item.redeem_script() =
+                        Some(wsh.inner_script().to_p2wsh().expect("TODO: Handle error"));
                 }
                 descriptor::ShInner::Wpkh(..) => *item.redeem_script() = Some(sh.inner_script()),
                 descriptor::ShInner::SortedMulti(_) | descriptor::ShInner::Ms(_) => {
@@ -1403,6 +1407,7 @@ mod tests {
     use bitcoin::consensus::encode::deserialize;
     use bitcoin::hashes::hex::FromHex;
     use bitcoin::key::XOnlyPublicKey;
+    use bitcoin::script::ScriptBufExt as _;
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::{Amount, OutPoint, TxIn, TxOut};
 
@@ -1611,7 +1616,7 @@ mod tests {
             lock_time: absolute::LockTime::ZERO,
             input: vec![TxIn {
                 previous_output: OutPoint { txid: non_witness_utxo.compute_txid(), vout: 0 },
-                ..Default::default()
+                ..TxIn::EMPTY_COINBASE
             }],
             output: vec![],
         };
@@ -1634,7 +1639,7 @@ mod tests {
             Ok(()),
             "matching non_witness_utxo"
         );
-        non_witness_utxo.version = transaction::Version::non_standard(0);
+        non_witness_utxo.version = transaction::Version::maybe_non_standard(0);
         psbt.inputs[0].non_witness_utxo = Some(non_witness_utxo);
         assert_eq!(
             psbt.update_input_with_descriptor(0, &desc),

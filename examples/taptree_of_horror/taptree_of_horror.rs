@@ -5,7 +5,7 @@ use bitcoin::consensus::encode::serialize;
 use bitcoin::hashes::Hash;
 use bitcoin::hex::{Case, DisplayHex};
 use bitcoin::transaction::Version;
-use bitcoin::{Address, Amount, Network, Psbt, PublicKey, Sequence, TxIn, TxOut};
+use bitcoin::{Address, Amount, Network, Psbt, PublicKey, Sequence, TxIn, TxOut, ScriptBuf, Witness};
 use helper_fns::{produce_grim_hash, produce_kelly_hash, produce_key_pairs};
 use miniscript::descriptor::DescriptorSecretKey;
 use miniscript::policy::Concrete;
@@ -211,9 +211,10 @@ fn main() {
                 .unwrap(),
             vout: 0,
         },
+        script_sig: ScriptBuf::default(),
         sequence: Sequence(0),
         //        sequence: Sequence(40),
-        ..Default::default()
+        witness: Witness::default(),
     };
 
     let prev_amount = Amount::from_sat(100_000_000);

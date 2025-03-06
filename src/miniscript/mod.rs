@@ -1027,14 +1027,42 @@ impl<Pk: FromStrKey, Ctx: ScriptContext> str::FromStr for Miniscript<Pk, Ctx> {
 
 serde_string_impl_pk!(Miniscript, "a miniscript", Ctx; ScriptContext);
 
-/// Provides a Double SHA256 `Hash` type that displays forwards.
+/// Provides a general purpose Double SHA256 `Hash` type that displays forwards.
 pub mod hash256 {
-    use bitcoin::hashes::{hash_newtype, sha256d};
+    use bitcoin::hashes::{hash_newtype, sha256d, GeneralHash, HashEngine as _};
 
     hash_newtype! {
         /// A hash256 of preimage.
         #[hash_newtype(forward)]
         pub struct Hash(sha256d::Hash);
+    }
+    bitcoin::hashes::impl_hex_for_newtype!(Hash);
+    #[cfg(feature = "serde")]
+    bitcoin::hashes::impl_serde_for_newtype!(Hash);
+
+    impl Hash {
+        /// Constructs a new engine.
+        pub fn engine() -> sha256d::HashEngine { sha256d::HashEngine::default() }
+
+        /// Produces a hash from the current state of a given engine.
+        pub fn from_engine(e: sha256d::HashEngine) -> Self {
+            let sha256d = sha256d::Hash::from_engine(e);
+            Hash(sha256d)
+        }
+
+        /// Hashes some bytes.
+        pub fn hash(data: &[u8]) -> Self {
+            let mut engine = Self::engine();
+            engine.input(data);
+            Self::from_engine(engine)
+        }
+    }
+
+    impl GeneralHash for Hash {
+        type Engine = sha256d::HashEngine;
+
+        fn engine() -> Self::Engine { Hash::engine() }
+        fn from_engine(e: Self::Engine) -> Self { Self::from_engine(e) }
     }
 }
 
@@ -1044,7 +1072,7 @@ mod tests {
     use core::str;
     use core::str::FromStr;
 
-    use bitcoin::hashes::{hash160, sha256, Hash};
+    use bitcoin::hashes::{hash160, sha256};
     use bitcoin::secp256k1::XOnlyPublicKey;
     use bitcoin::taproot::TapLeafHash;
     use sync::Arc;
@@ -1317,7 +1345,7 @@ mod tests {
 
         string_rtt(
             script,
-            "[B/onduesm]pk(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/onduesm]pk(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "pk(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)"
         );
 
@@ -1325,7 +1353,7 @@ mod tests {
 
         string_rtt(
             script,
-            "[B/onduesm]pk(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/onduesm]pk(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "pk(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)"
         );
 
@@ -1333,7 +1361,7 @@ mod tests {
 
         string_rtt(
             script,
-            "[B/onufsm]t[V/onfsm]v:[B/onduesm]pk(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/onufsm]t[V/onfsm]v:[B/onduesm]pk(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "tv:pk(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)"
         );
 
@@ -1341,7 +1369,7 @@ mod tests {
 
         string_display_debug_test(
             script,
-            "[B/nduesm]pkh(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/nduesm]pkh(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "pkh(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)",
         );
 
@@ -1349,7 +1377,7 @@ mod tests {
 
         string_display_debug_test(
             script,
-            "[B/nduesm]pkh(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/nduesm]pkh(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "pkh(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)",
         );
 
@@ -1357,7 +1385,7 @@ mod tests {
 
         string_display_debug_test(
             script,
-            "[B/nufsm]t[V/nfsm]v:[B/nduesm]pkh(PublicKey { compressed: true, inner: PublicKey(aa4c32e50fb34a95a372940ae3654b692ea35294748c3dd2c08b29f87ba9288c8294efcb73dc719e45b91c45f084e77aebc07c1ff3ed8f37935130a36304a340) })",
+            "[B/nufsm]t[V/nfsm]v:[B/nduesm]pkh(PublicKey { compressed: true, inner: 028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa })",
             "tv:pkh(028c28a97bf8298bc0d23d8c749452a32e694b65e30a9472a3954ab30fe5324caa)",
         );
     }
@@ -1654,7 +1682,7 @@ mod tests {
             "02c2fd50ceae468857bb7eb32ae9cd4083e6c7e42fbbec179d81134b3e3830586c",
         )
         .unwrap();
-        let hash160 = pk.pubkey_hash().to_raw_hash();
+        let hash160 = pk.pubkey_hash();
         let ms_str = &format!("c:expr_raw_pkh({})", hash160);
         type SegwitMs = Miniscript<bitcoin::PublicKey, Segwitv0>;
 
@@ -1671,7 +1699,7 @@ mod tests {
 
         // Try replacing the raw_pkh with a pkh
         let mut map = BTreeMap::new();
-        map.insert(hash160, pk);
+        map.insert(hash160::Hash::from_byte_array(hash160.to_byte_array()), pk);
         let ms_no_raw = ms.substitute_raw_pkh(&map);
         assert_eq!(ms_no_raw.to_string(), format!("pkh({})", pk),);
     }

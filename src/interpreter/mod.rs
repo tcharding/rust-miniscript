@@ -11,7 +11,7 @@
 use core::fmt;
 use core::str::FromStr;
 
-use bitcoin::hashes::{hash160, ripemd160, sha256, Hash};
+use bitcoin::hashes::{hash160, ripemd160, sha256};
 use bitcoin::{absolute, relative, secp256k1, sighash, taproot, Sequence, TxOut, Witness};
 
 use crate::miniscript::context::{NoChecks, SigType};
@@ -275,7 +275,7 @@ impl<'txin> Interpreter<'txin> {
                 let msg =
                     sighash_msg.map(|hash| secp256k1::Message::from_digest(hash.to_byte_array()));
                 let success = msg.map(|msg| {
-                    secp.verify_schnorr(&schnorr_sig.signature, &msg, xpk)
+                    secp.verify_schnorr(&schnorr_sig.signature, msg.as_ref(), xpk)
                         .is_ok()
                 });
                 success.unwrap_or(false) // unwrap_or_default checks for errors, while success would have checksig results
@@ -1050,7 +1050,6 @@ fn verify_sersig<'txin>(
 
 #[cfg(test)]
 mod tests {
-
     use bitcoin::secp256k1::Secp256k1;
 
     use super::inner::ToNoChecks;
@@ -1103,7 +1102,7 @@ mod tests {
             let keypair = bitcoin::key::Keypair::from_secret_key(&secp, &sk);
             let (x_only_pk, _parity) = bitcoin::key::XOnlyPublicKey::from_keypair(&keypair);
             x_only_pks.push(x_only_pk);
-            let schnorr_sig = secp.sign_schnorr_with_aux_rand(&msg, &keypair, &[0u8; 32]);
+            let schnorr_sig = secp.sign_schnorr_with_aux_rand(msg.as_ref(), &keypair, &[0u8; 32]);
             let schnorr_sig = bitcoin::taproot::Signature {
                 signature: schnorr_sig,
                 sighash_type: bitcoin::sighash::TapSighashType::Default,
@@ -1124,7 +1123,7 @@ mod tests {
                 .verify_ecdsa(&sighash, &ecdsa_sig.signature, &pk.inner)
                 .is_ok(),
             KeySigPair::Schnorr(xpk, schnorr_sig) => secp_ref
-                .verify_schnorr(&schnorr_sig.signature, &sighash, xpk)
+                .verify_schnorr(&schnorr_sig.signature, sighash.as_ref(), xpk)
                 .is_ok(),
         };
 
